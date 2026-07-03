@@ -6,16 +6,21 @@ import { CAMPAIGN_TYPES, SkuId } from "@/lib/data/campaign-types";
 import { useCampaignStore } from "@/lib/store/campaign-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
+import { computePricing, outcomeTargetFor } from "@/lib/calc/pricing";
+import { buildBriefHtml, buildProposalHtml, downloadHtmlFile } from "@/lib/export/html-export";
 import { StepIndicator } from "@/components/step-indicator";
 import { BriefForm } from "@/components/brief-form";
 import { PodDisplay } from "@/components/pod-display";
 import { VendorTogglePanel } from "@/components/vendor-toggle-panel";
 import { Timeline } from "@/components/timeline";
 import { ResultsProjection } from "@/components/results-projection";
-import { PricingSummary } from "@/components/pricing-summary";
+import { PricingSummary, vendorLinesFor } from "@/components/pricing-summary";
 import { TalkToUsCta } from "@/components/talk-to-us-cta";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Download } from "lucide-react";
 
 const SUB_STEPS = [
   { key: "brief", label: "Brief" },
@@ -37,6 +42,9 @@ export default function BuildWizardPage() {
   const setVendorToggle = useCampaignStore((s) => s.setVendorToggle);
   const setPodOverride = useCampaignStore((s) => s.setPodOverride);
   const resetPodOverride = useCampaignStore((s) => s.resetPodOverride);
+  const addCustomVendor = useCampaignStore((s) => s.addCustomVendor);
+  const updateCustomVendor = useCampaignStore((s) => s.updateCustomVendor);
+  const removeCustomVendor = useCampaignStore((s) => s.removeCustomVendor);
   const approveTimeline = useCampaignStore((s) => s.approveTimeline);
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -63,6 +71,39 @@ export default function BuildWizardPage() {
     [ct, sku, config?.sprints]
   );
 
+  const vendorLines = useMemo(
+    () => (config ? vendorLinesFor(config.vendorToggles, config.customVendors) : []),
+    [config]
+  );
+  const pricing = useMemo(() => {
+    if (!ct || !config) return null;
+    const outcomeTarget = outcomeTargetFor(config.outcomeMetric, {
+      audienceSize: config.audienceSize,
+      qualifiedPct: config.qualifiedPct,
+      opportunityPct: config.opportunityPct,
+      closePct: config.closePct,
+      asp: config.asp,
+    });
+    return computePricing({
+      sku,
+      pod,
+      assets: config.assets,
+      audience: config.audienceSize,
+      channels: config.channels,
+      emailSteps: config.emailSteps,
+      liSteps: config.liSteps,
+      waSteps: config.waSteps,
+      adSpend: config.adSpend,
+      vendorLines,
+      priceMode: config.priceMode,
+      outcomeMetric: config.outcomeMetric,
+      outcomeTarget,
+      outcomeRate: config.outcomeRate,
+      outcomeDeltaRate: config.outcomeDeltaRate,
+      outcomeDeltaThreshold: config.outcomeDeltaThreshold,
+    });
+  }, [ct, sku, config, pod, vendorLines]);
+
   if (!ct || !config) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
@@ -72,7 +113,9 @@ export default function BuildWizardPage() {
     );
   }
 
-  const assetTypes = config.assets.map((a) => a.type);
+  const cfg = config;
+  const assetTypes = cfg.assets.map((a) => a.type);
+  const fileSlug = (cfg.name || sku).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   function goNext() {
     setStepIndex((i) => Math.min(i + 1, SUB_STEPS.length - 1));
@@ -81,12 +124,34 @@ export default function BuildWizardPage() {
     setStepIndex((i) => Math.max(i - 1, 0));
   }
 
+  function handleExportBrief() {
+    const html = buildBriefHtml(ct, cfg, pod, sprintBreakdown, vendorLines);
+    downloadHtmlFile(`${fileSlug}-brief.html`, html);
+  }
+  function handleExportProposal() {
+    if (!pricing) return;
+    const html = buildProposalHtml(ct, cfg, pod, sprintBreakdown, pricing, vendorLines);
+    downloadHtmlFile(`${fileSlug}-proposal.html`, html);
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 border-b border-border pb-4">
-        <div className="font-mono-label text-[10px] text-primary mb-1">Building — {ct.label}</div>
-        <h1 className="font-heading text-2xl font-semibold">{config.name || "Untitled campaign"}</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">{ct.desc}</p>
+        <div className="mb-2 flex items-start justify-between gap-4">
+          <div>
+            <div className="font-mono-label text-[10px] text-primary mb-1">Building — {ct.label}</div>
+            <h1 className="font-heading text-2xl font-semibold">{config.name || "Untitled campaign"}</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">{ct.desc}</p>
+          </div>
+          <div className="flex flex-none flex-col gap-1.5 sm:flex-row">
+            <Button variant="outline" size="sm" onClick={handleExportBrief}>
+              <Download className="h-3.5 w-3.5" /> Export Brief (HTML)
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportProposal} disabled={!pricing}>
+              <Download className="h-3.5 w-3.5" /> Export Proposal (HTML)
+            </Button>
+          </div>
+        </div>
       </div>
 
       <StepIndicator steps={SUB_STEPS} activeIndex={stepIndex} />
@@ -98,6 +163,32 @@ export default function BuildWizardPage() {
 
         {stepIndex === 1 && (
           <div className="flex flex-col gap-6">
+            <Card className="bg-paper border-paper-border text-paper-foreground">
+              <CardContent className="pt-5">
+                <div className="font-mono-label text-[9.5px] text-primary-hover mb-3">Delivery Timing</div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label>Weeks</Label>
+                    <Input
+                      type="number"
+                      value={config.weeks}
+                      onChange={(e) => updateConfig(sku, { weeks: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Sprints</Label>
+                    <Input
+                      type="number"
+                      value={config.sprints}
+                      onChange={(e) => updateConfig(sku, { sprints: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] text-[#6a7280]">
+                  Sprints group the process steps below into the Timeline step&apos;s sprint blocks.
+                </p>
+              </CardContent>
+            </Card>
             <PodDisplay
               pod={pod}
               suggested={suggestedPod}
@@ -108,6 +199,10 @@ export default function BuildWizardPage() {
               assetTypes={assetTypes}
               vendorToggles={config.vendorToggles}
               onToggle={(id, state) => setVendorToggle(sku, id, state)}
+              customVendors={config.customVendors}
+              onAddCustomVendor={() => addCustomVendor(sku)}
+              onUpdateCustomVendor={(id, partial) => updateCustomVendor(sku, id, partial)}
+              onRemoveCustomVendor={(id) => removeCustomVendor(sku, id)}
             />
           </div>
         )}

@@ -31,7 +31,7 @@ export function ResultsProjection({
   onChange: (partial: Partial<CampaignConfig>) => void;
 }) {
   const reachResult =
-    sku === "performance" ? computeReach(config.industry as IndustryId, config.adBudgetForReach, config.channels) : null;
+    sku === "performance" ? computeReach(config.industry as IndustryId, config.adSpend, config.channels) : null;
 
   // Once ad spend is entered, the channel+spend-weighted funnel here supersedes
   // the generic industry benchmark — synced back so pricing's outcome target
@@ -59,11 +59,11 @@ export function ResultsProjection({
       <div>
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label>Ad budget for reach estimate ($/mo)</Label>
+            <Label>Ad spend ($/mo) — same figure used in Pricing</Label>
             <Input
               type="number"
-              value={config.adBudgetForReach}
-              onChange={(e) => onChange({ adBudgetForReach: Number(e.target.value) || 0 })}
+              value={config.adSpend}
+              onChange={(e) => onChange({ adSpend: Number(e.target.value) || 0 })}
             />
           </div>
         </div>

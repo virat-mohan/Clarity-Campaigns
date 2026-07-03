@@ -3,7 +3,7 @@
 import { CampaignType } from "@/lib/data/campaign-types";
 import { CampaignConfig } from "@/lib/store/campaign-store";
 import { ASSET_TYPES } from "@/lib/data/campaign-types";
-import { INDUSTRY_LIST, IndustryId } from "@/lib/data/industry-benchmarks";
+import { INDUSTRY_LIST, IndustryId, ALL_CHANNELS } from "@/lib/data/industry-benchmarks";
 import { industryFunnelBenchmark } from "@/lib/calc/reach";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const OBJECTIVES = [
   "Lead Generation",
@@ -47,9 +47,9 @@ export function BriefForm({
   onChange: (partial: Partial<CampaignConfig>) => void;
 }) {
   const isSales = ct.mode === "sales";
-  const hasEmail = ct.channels.includes("Email");
-  const hasLI = ct.channels.includes("LinkedIn");
-  const hasWA = ct.channels.includes("WhatsApp");
+  const hasEmail = config.channels.includes("Email");
+  const hasLI = config.channels.includes("LinkedIn");
+  const hasWA = config.channels.includes("WhatsApp");
 
   function updateAsset(index: number, partial: Partial<{ type: string; qty: number; rate: number }>) {
     const next = [...config.assets];
@@ -64,9 +64,22 @@ export function BriefForm({
   }
 
   function handleIndustryChange(industryId: string) {
-    const benchmark = industryFunnelBenchmark(industryId as IndustryId, ct.channels);
+    const benchmark = industryFunnelBenchmark(industryId as IndustryId, config.channels);
     onChange({
       industry: industryId,
+      qualifiedPct: benchmark.qualifiedPct,
+      opportunityPct: benchmark.opportunityPct,
+      closePct: benchmark.closePct,
+    });
+  }
+
+  function toggleChannel(channel: string) {
+    const nextChannels = config.channels.includes(channel)
+      ? config.channels.filter((c) => c !== channel)
+      : [...config.channels, channel];
+    const benchmark = industryFunnelBenchmark(config.industry as IndustryId, nextChannels);
+    onChange({
+      channels: nextChannels,
       qualifiedPct: benchmark.qualifiedPct,
       opportunityPct: benchmark.opportunityPct,
       closePct: benchmark.closePct,
@@ -160,12 +173,27 @@ export function BriefForm({
       <Section title="Channels & Assets">
         <div className="mb-3">
           <Label>
-            Channels <span className="normal-case text-[#a07a3a]">(locked to campaign type)</span>
+            Channels <span className="normal-case text-[#6a7280]">(select any — {ct.label} typically uses {ct.channels.join(", ")})</span>
           </Label>
           <div className="flex flex-wrap gap-1.5">
-            {ct.channels.map((c) => (
-              <Badge key={c} variant="amber">{c}</Badge>
-            ))}
+            {ALL_CHANNELS.map((c) => {
+              const selected = config.channels.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleChannel(c)}
+                  className={cn(
+                    "font-mono text-[10.5px] px-2.5 py-1 rounded-full border transition-colors",
+                    selected
+                      ? "bg-paper-foreground text-paper border-paper-foreground"
+                      : "bg-transparent text-[#6a7280] border-paper-border hover:border-primary-hover"
+                  )}
+                >
+                  {c}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -275,15 +303,10 @@ export function BriefForm({
             <Label>Owner</Label>
             <Input value={config.owner} onChange={(e) => onChange({ owner: e.target.value })} />
           </div>
-          <div>
-            <Label>Weeks</Label>
-            <Input type="number" value={config.weeks} onChange={(e) => onChange({ weeks: Number(e.target.value) || 0 })} />
-          </div>
-          <div>
-            <Label>Sprints</Label>
-            <Input type="number" value={config.sprints} onChange={(e) => onChange({ sprints: Number(e.target.value) || 0 })} />
-          </div>
         </div>
+        <p className="mt-2 text-[11px] text-[#6a7280]">
+          Weeks and sprints are set in the Pod &amp; Vendor step, since they drive staffing and timeline together.
+        </p>
         <div className="mt-3">
           <Label>Notes</Label>
           <Textarea placeholder="Context, constraints, specifics" value={config.notes} onChange={(e) => onChange({ notes: e.target.value })} />

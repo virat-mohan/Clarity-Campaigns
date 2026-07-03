@@ -1,7 +1,7 @@
 "use client";
 
 import { SkuId } from "@/lib/data/campaign-types";
-import { CampaignConfig, VendorToggleState } from "@/lib/store/campaign-store";
+import { CampaignConfig, VendorToggleState, CustomVendorLine } from "@/lib/store/campaign-store";
 import { PodRow } from "@/lib/calc/staffing";
 import { computePricing, outcomeTargetFor, PriceMode, OutcomeMetric, VendorLine } from "@/lib/calc/pricing";
 import { ALL_ROSTER, currencyForRoster } from "@/lib/data/talent-vendor-roster";
@@ -18,8 +18,11 @@ function outcomeMetricLabel(metric: OutcomeMetric, customLabel: string): string 
   return customLabel || "custom outcome";
 }
 
-export function vendorLinesFor(vendorToggles: Record<string, VendorToggleState>): VendorLine[] {
-  return ALL_ROSTER.filter((r) => r.togglable)
+export function vendorLinesFor(
+  vendorToggles: Record<string, VendorToggleState>,
+  customVendors: CustomVendorLine[] = []
+): VendorLine[] {
+  const rosterLines = ALL_ROSTER.filter((r) => r.togglable)
     .map((r) => ({ entry: r, state: vendorToggles[r.id] }))
     .filter((x): x is { entry: (typeof ALL_ROSTER)[number]; state: VendorToggleState } => !!x.state?.on)
     .map(({ entry, state }) => ({
@@ -28,6 +31,10 @@ export function vendorLinesFor(vendorToggles: Record<string, VendorToggleState>)
       cost: state.cost ?? 0,
       currency: currencyForRoster(entry),
     }));
+  const customLines = customVendors
+    .filter((v) => v.name.trim().length > 0)
+    .map((v) => ({ id: v.id, name: v.name, cost: v.cost ?? 0, currency: "USD" as const }));
+  return [...rosterLines, ...customLines];
 }
 
 export function PricingSummary({
@@ -48,7 +55,7 @@ export function PricingSummary({
     closePct: config.closePct,
     asp: config.asp,
   });
-  const vendorLines = vendorLinesFor(config.vendorToggles);
+  const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors);
 
   const pricing = computePricing({
     sku,

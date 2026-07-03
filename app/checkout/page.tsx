@@ -49,7 +49,7 @@ function CheckoutContent() {
 
   const cfg = config;
   const skuId = sku;
-  const vendorLines = vendorLinesFor(cfg.vendorToggles);
+  const vendorLines = vendorLinesFor(cfg.vendorToggles, cfg.customVendors);
   const outcomeTarget = outcomeTargetFor(cfg.outcomeMetric, {
     audienceSize: cfg.audienceSize,
     qualifiedPct: cfg.qualifiedPct,
