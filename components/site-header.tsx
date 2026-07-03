@@ -3,7 +3,7 @@ import { TalkToUsCta } from "@/components/talk-to-us-cta";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-black/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-[54px] max-w-[1180px] items-center gap-3 px-4">
         <Link href="/" className="flex items-center gap-2 font-heading text-[15px] font-bold">
           <span className="grid h-[22px] w-[22px] place-items-center rounded-full border-2 border-primary">
