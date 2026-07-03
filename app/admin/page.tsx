@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAdminStore, VendorMediaType } from "@/lib/store/admin-store";
-import { CAMPAIGN_TYPE_LIST, SkuId } from "@/lib/data/campaign-types";
+import { CAMPAIGN_TYPES, CAMPAIGN_TYPE_LIST, SkuId } from "@/lib/data/campaign-types";
 import { ROLE_LIBRARY } from "@/lib/data/role-library";
+import { useCampaignStore } from "@/lib/store/campaign-store";
+import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
+import { buildSprintBreakdown } from "@/lib/calc/sprint";
+import { buildFreelancerCallHtml, downloadHtmlFile } from "@/lib/export/html-export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MEDIA_TYPES: VendorMediaType[] = ["video", "image", "other"];
@@ -26,7 +30,40 @@ export default function AdminPage() {
   const updateVendor = useAdminStore((s) => s.updateVendor);
   const removeVendor = useAdminStore((s) => s.removeVendor);
 
+  const campaignConfigs = useCampaignStore((s) => s.configs);
+  const getConfig = useCampaignStore((s) => s.getConfig);
+
   const [tab, setTab] = useState("freelancers");
+  const [biddingSku, setBiddingSku] = useState<SkuId>("abm");
+
+  const biddingConfig = campaignConfigs[biddingSku] ?? getConfig(biddingSku);
+  const biddingCt = CAMPAIGN_TYPES[biddingSku];
+
+  const biddingPod = useMemo(() => {
+    const suggested = buildAutoPod(biddingSku, biddingConfig.audienceSize);
+    return applyPodOverrides(suggested, biddingConfig.podOverrides ?? {});
+  }, [biddingSku, biddingConfig]);
+
+  const biddingSprintBreakdown = useMemo(
+    () => buildSprintBreakdown(biddingSku, biddingConfig.sprints ?? 1),
+    [biddingSku, biddingConfig]
+  );
+
+  function handleExportBidding() {
+    const fileSlug = (biddingConfig.name || biddingSku)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    const html = buildFreelancerCallHtml(
+      biddingCt,
+      biddingConfig,
+      biddingPod,
+      biddingSprintBreakdown,
+      freelancers,
+      biddingConfig.podAssignments ?? {}
+    );
+    downloadHtmlFile(`${fileSlug}-freelancer-call.html`, html);
+  }
 
   function toggleSkuScope(vendorId: string, sku: SkuId, current: SkuId[]) {
     const next = current.includes(sku) ? current.filter((s) => s !== sku) : [...current, sku];
@@ -39,7 +76,7 @@ export default function AdminPage() {
         <div className="font-mono-label text-[10px] text-primary mb-1">Internal — no auth in this demo</div>
         <h1 className="font-heading text-2xl font-semibold">Admin</h1>
         <p className="text-[13px] text-muted-foreground mt-1">
-          Manage the named freelancer roster and vendor list used when building campaigns.
+          Manage the named freelancer roster, vendor list, and export freelancer call-for-bids documents.
         </p>
       </div>
 
@@ -47,6 +84,7 @@ export default function AdminPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="freelancers">Freelancers</TabsTrigger>
           <TabsTrigger value="vendors">Vendors</TabsTrigger>
+          <TabsTrigger value="bidding">Freelancer Call for Bids</TabsTrigger>
         </TabsList>
 
         <TabsContent value="freelancers">
@@ -185,6 +223,76 @@ export default function AdminPage() {
           </div>
           <Button variant="outline" size="sm" className="mt-3" onClick={addVendor}>
             + Add vendor
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="bidding">
+          <p className="mb-4 text-[12.5px] text-muted-foreground">
+            Generate a call-for-bids document for a campaign. The document lists every pod role with its
+            deliverable, indicative rate, and timeline window — with blank bid fields for each freelancer to
+            fill in. Freelancer assignments made in the campaign builder are reflected as &quot;provisionally
+            assigned&quot; so unassigned roles are clearly open.
+          </p>
+
+          <Card className="mb-4 bg-paper border-paper-border">
+            <CardContent className="pt-5">
+              <div className="font-mono-label text-[9.5px] text-primary-hover mb-3">Select campaign</div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>Campaign type</Label>
+                  <Select value={biddingSku} onValueChange={(v) => setBiddingSku(v as SkuId)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CAMPAIGN_TYPE_LIST.map((ct) => (
+                        <SelectItem key={ct.id} value={ct.id}>{ct.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Campaign name</Label>
+                  <Input
+                    readOnly
+                    value={biddingConfig.name || "(untitled — configure in campaign builder)"}
+                    className="text-muted-foreground"
+                  />
+                </div>
+              </div>
+
+              {biddingConfig.client && (
+                <p className="mt-2 text-[11.5px] text-muted-foreground">
+                  Client: <strong>{biddingConfig.client}</strong> · {biddingPod.length} pod steps ·{" "}
+                  {biddingConfig.weeks} weeks · {biddingConfig.sprints} sprints
+                </p>
+              )}
+
+              <div className="mt-4 border-t border-paper-border pt-4">
+                <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">Pod preview</div>
+                <div className="flex flex-col gap-1">
+                  {biddingPod.map((row) => {
+                    const assignedId = biddingConfig.podAssignments?.[row.stepNumber];
+                    const assignedFreelancer = freelancers.find((f) => f.id === assignedId);
+                    return (
+                      <div key={row.stepNumber} className="flex items-center gap-2 text-[12px]">
+                        <span className="font-mono text-[10px] text-muted-foreground w-5 text-right">{row.stepNumber}</span>
+                        <span className="flex-1 text-foreground">{row.stepTitle}</span>
+                        <span className="text-muted-foreground">{row.role}</span>
+                        {assignedFreelancer ? (
+                          <span className="font-mono text-[10px] text-primary">{assignedFreelancer.name}</span>
+                        ) : (
+                          <span className="font-mono text-[10px] text-secondary">Open</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button onClick={handleExportBidding}>
+            <Download className="h-3.5 w-3.5" />
+            Export Freelancer Call for Bids (HTML)
           </Button>
         </TabsContent>
       </Tabs>

@@ -8,7 +8,7 @@ import { useAdminStore } from "@/lib/store/admin-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
 import { computePricing, outcomeTargetFor } from "@/lib/calc/pricing";
-import { buildBriefHtml, buildProposalHtml, buildFreelancerCallHtml, downloadHtmlFile } from "@/lib/export/html-export";
+import { buildBriefHtml, buildProposalHtml, downloadHtmlFile } from "@/lib/export/html-export";
 import { StepIndicator } from "@/components/step-indicator";
 import { BriefForm } from "@/components/brief-form";
 import { PodDisplay } from "@/components/pod-display";
@@ -50,7 +50,6 @@ export default function BuildWizardPage() {
   const removeCustomVendor = useCampaignStore((s) => s.removeCustomVendor);
   const approveTimeline = useCampaignStore((s) => s.approveTimeline);
   const adminVendors = useAdminStore((s) => s.vendors);
-  const freelancers = useAdminStore((s) => s.freelancers);
 
   const [stepIndex, setStepIndex] = useState(0);
   const prefilledRef = useRef(false);
@@ -138,11 +137,6 @@ export default function BuildWizardPage() {
     const html = buildProposalHtml(ct, cfg, pod, sprintBreakdown, pricing, vendorLines);
     downloadHtmlFile(`${fileSlug}-proposal.html`, html);
   }
-  function handleExportFreelancerCall() {
-    const html = buildFreelancerCallHtml(ct, cfg, pod, sprintBreakdown, freelancers, cfg.podAssignments);
-    downloadHtmlFile(`${fileSlug}-freelancer-call.html`, html);
-  }
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 border-b border-border pb-4">
@@ -158,9 +152,6 @@ export default function BuildWizardPage() {
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportProposal} disabled={!pricing}>
               <Download className="h-3.5 w-3.5" /> Export Proposal (HTML)
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportFreelancerCall}>
-              <Download className="h-3.5 w-3.5" /> Export for Freelancer Bidding (HTML)
             </Button>
           </div>
         </div>

@@ -102,9 +102,11 @@ export function PricingSummary({
       {config.priceMode === "hybrid" && (
         <Card className="mb-4 bg-paper border-paper-border text-paper-foreground">
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="font-mono-label text-[9.5px] text-primary-hover mb-3">Variable payout structure</div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mb-4">
               <div>
-                <Label>Outcome metric this campaign is paid on</Label>
+                <Label>Outcome metric</Label>
                 <Select value={config.outcomeMetric} onValueChange={(v) => onChange({ outcomeMetric: v as OutcomeMetric })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -117,7 +119,7 @@ export function PricingSummary({
               </div>
               {config.outcomeMetric === "custom" && (
                 <div>
-                  <Label>Custom outcome metric name</Label>
+                  <Label>Custom metric name</Label>
                   <Input
                     placeholder="e.g. demo completed, signup activated"
                     value={config.outcomeCustomLabel}
@@ -126,25 +128,61 @@ export function PricingSummary({
                 </div>
               )}
               <div>
-                <Label>Target outcomes (baseline, from funnel)</Label>
-                <Input type="number" value={outcomeTarget} readOnly />
+                <Label>Target (auto from funnel — read only)</Label>
+                <Input type="number" value={outcomeTarget} readOnly className="bg-muted/40 cursor-default" />
               </div>
               <div>
-                <Label>Rate per outcome at target ($)</Label>
+                <Label>Rate per {metricLabel} at or below target ($)</Label>
                 <Input type="number" value={config.outcomeRate} onChange={(e) => onChange({ outcomeRate: Number(e.target.value) || 0 })} />
               </div>
               <div>
-                <Label>Delta bonus rate above target ($/outcome)</Label>
+                <Label>Bonus rate above threshold ($/extra {metricLabel})</Label>
                 <Input type="number" value={config.outcomeDeltaRate} onChange={(e) => onChange({ outcomeDeltaRate: Number(e.target.value) || 0 })} />
               </div>
               <div>
-                <Label>Delta bonus threshold (% over target)</Label>
+                <Label>Bonus kicks in above target by (% threshold)</Label>
                 <Input type="number" value={config.outcomeDeltaThreshold} onChange={(e) => onChange({ outcomeDeltaThreshold: Number(e.target.value) || 0 })} />
               </div>
             </div>
-            <p className="mt-3 text-[11.5px] text-muted-foreground-2">
-              Delta bonus of {fmtMoney(config.outcomeDeltaRate)}/{metricLabel} applies above {config.outcomeDeltaThreshold}% over target.
-            </p>
+
+            {/* Formula breakdown */}
+            <div className="rounded-[3px] border border-paper-border bg-muted/30 p-3 mb-3 text-[12px]">
+              <div className="font-mono-label text-[8.5px] text-muted-foreground mb-2">How it&apos;s calculated</div>
+              <div className="space-y-1 text-foreground">
+                <div><span className="text-muted-foreground w-36 inline-block">Fixed component</span> Cost × 3 = {fmtMoney(pricing.fixedComponent)}</div>
+                <div><span className="text-muted-foreground w-36 inline-block">At-target variable</span> {outcomeTarget} {metricLabel}s × {fmtMoney(config.outcomeRate)} = {fmtMoney(pricing.baselineVariable)}</div>
+                <div><span className="text-muted-foreground w-36 inline-block">Bonus threshold</span> Triggered above {config.outcomeDeltaThreshold}% over target ({Math.round(outcomeTarget * (1 + config.outcomeDeltaThreshold / 100))} {metricLabel}s)</div>
+                <div><span className="text-muted-foreground w-36 inline-block">Bonus rate</span> {fmtMoney(config.outcomeDeltaRate)} per extra {metricLabel} above threshold</div>
+              </div>
+            </div>
+
+            {/* Worked example */}
+            {outcomeTarget > 0 && config.outcomeRate > 0 && (() => {
+              const thresholdCount = Math.ceil(outcomeTarget * (1 + config.outcomeDeltaThreshold / 100));
+              const exampleDelivered = Math.round(outcomeTarget * 1.3); // show 30% over target
+              const aboveThreshold = Math.max(0, exampleDelivered - thresholdCount);
+              const exampleDelta = aboveThreshold * config.outcomeDeltaRate;
+              const exampleTotal = pricing.fixedComponent + pricing.baselineVariable + exampleDelta;
+              return (
+                <div className="rounded-[3px] border border-secondary/30 bg-secondary/5 p-3 text-[11.5px]">
+                  <div className="font-mono-label text-[8.5px] text-secondary mb-2">Worked example — if you deliver {exampleDelivered} {metricLabel}s (30% above target)</div>
+                  <div className="space-y-0.5 text-foreground">
+                    <div className="flex justify-between"><span>Fixed (cost × 3)</span><span className="font-mono">{fmtMoney(pricing.fixedComponent)}</span></div>
+                    <div className="flex justify-between"><span>At-target variable ({outcomeTarget} × {fmtMoney(config.outcomeRate)})</span><span className="font-mono">{fmtMoney(pricing.baselineVariable)}</span></div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Threshold at {config.outcomeDeltaThreshold}% above target → {thresholdCount} {metricLabel}s</span>
+                    </div>
+                    {aboveThreshold > 0 ? (
+                      <div className="flex justify-between"><span>Bonus: {aboveThreshold} extra × {fmtMoney(config.outcomeDeltaRate)}</span><span className="font-mono text-secondary">+ {fmtMoney(exampleDelta)}</span></div>
+                    ) : (
+                      <div className="text-muted-foreground">No bonus — delivery doesn&apos;t clear the {config.outcomeDeltaThreshold}% threshold</div>
+                    )}
+                    <div className="flex justify-between border-t border-secondary/20 pt-1 mt-1 font-semibold"><span>Total invoice (variable portion)</span><span className="font-mono">{fmtMoney(pricing.fixedComponent + pricing.baselineVariable + exampleDelta)}</span></div>
+                    <div className="flex justify-between text-muted-foreground text-[10.5px]"><span>+ ad spend + vendor costs on top (at cost)</span><span className="font-mono">{fmtMoney(pricing.adSpend + pricing.vendorCostUsd)}</span></div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

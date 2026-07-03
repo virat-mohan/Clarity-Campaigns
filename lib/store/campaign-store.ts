@@ -41,7 +41,7 @@ export interface CampaignConfig {
   industry: string; // for marketing-mode SKUs
   // Channels & Assets
   channels: string[];
-  assets: { type: string; qty: number; rate: number }[];
+  assets: { type: string; qty: number; rate: number; note?: string }[];
   emailSteps: number;
   liSteps: number;
   waSteps: number;
@@ -94,7 +94,8 @@ function defaultConfig(sku: SkuId): CampaignConfig {
 
 function buildDefaultConfig(sku: SkuId): CampaignConfig {
   const ct = CAMPAIGN_TYPES[sku];
-  const benchmark = industryFunnelBenchmark("d2c", ct.channels);
+  const defaultIndustry = ct.bestFitIndustries[0] ?? "d2c";
+  const benchmark = industryFunnelBenchmark(defaultIndustry, ct.channels);
   return {
     client: "",
     name: "",
@@ -104,7 +105,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     icp: "",
     audienceSize: 1000,
     source: "Account book",
-    industry: "d2c",
+    industry: defaultIndustry,
     channels: [...ct.channels],
     assets: [],
     emailSteps: 4,

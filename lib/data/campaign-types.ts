@@ -93,12 +93,10 @@ export const ASSET_TYPES: AssetTypeDef[] = [
   { type: "Blog Post", medium: "Text", size: "500 words", unit: "Medium post" },
   { type: "Carousel", medium: "Design", size: "6 images", unit: "LI Post" },
   { type: "Reel", medium: "Video", size: "30 Sec", unit: "-" },
+  { type: "Video", medium: "Video", size: "60-90 Sec", unit: "-" },
   { type: "Research Article", medium: "Text", size: "1500 words", unit: "-" },
   { type: "Case Study", medium: "Text", size: "-", unit: "-" },
   { type: "Static Ad", medium: "Design", size: "-", unit: "-" },
   { type: "X Post", medium: "Text", size: "-", unit: "-" },
   { type: "Slide", medium: "Design", size: "-", unit: "-" },
 ];
-
-// Asset types that warrant showing the video vendor toggle panel (AI Video / Film Director / Photographer).
-export const VIDEO_ASSET_TYPES = new Set(["Reel"]);

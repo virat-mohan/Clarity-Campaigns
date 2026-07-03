@@ -82,8 +82,8 @@ function briefSectionsHtml(ct: CampaignType, config: CampaignConfig): string {
   <div>${config.channels.map((c) => `<span class="tag">${esc(c)}</span>`).join("")}</div>
   ${
     config.assets.length > 0
-      ? `<table style="margin-top:10px"><tr><th>Asset</th><th>Qty</th><th>Rate</th></tr>${config.assets
-          .map((a) => `<tr><td>${esc(a.type)}</td><td>${esc(a.qty)}</td><td class="num">${fmtMoney(a.rate)}</td></tr>`)
+      ? `<table style="margin-top:10px"><tr><th>Asset</th><th>Qty</th><th>Rate</th><th>Note</th></tr>${config.assets
+          .map((a) => `<tr><td>${esc(a.type)}</td><td>${esc(a.qty)}</td><td class="num">${fmtMoney(a.rate)}</td><td style="font-size:11.5px;color:#6a7280">${esc(a.note ?? "")}</td></tr>`)
           .join("")}</table>`
       : `<p class="note">No deliverable assets added.</p>`
   }

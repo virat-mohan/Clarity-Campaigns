@@ -51,13 +51,13 @@ export function BriefForm({
   const hasLI = config.channels.includes("LinkedIn");
   const hasWA = config.channels.includes("WhatsApp");
 
-  function updateAsset(index: number, partial: Partial<{ type: string; qty: number; rate: number }>) {
+  function updateAsset(index: number, partial: Partial<{ type: string; qty: number; rate: number; note: string }>) {
     const next = [...config.assets];
     next[index] = { ...next[index], ...partial };
     onChange({ assets: next });
   }
   function addAsset() {
-    onChange({ assets: [...config.assets, { type: ASSET_TYPES[0].type, qty: 1, rate: 0 }] });
+    onChange({ assets: [...config.assets, { type: ASSET_TYPES[0].type, qty: 1, rate: 0, note: "" }] });
   }
   function removeAsset(index: number) {
     onChange({ assets: config.assets.filter((_, i) => i !== index) });
@@ -223,30 +223,38 @@ export function BriefForm({
         <Label>Deliverable assets</Label>
         <div className="flex flex-col gap-2">
           {config.assets.map((asset, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2 border-b border-dashed border-paper-border pb-2">
-              <Select value={asset.type} onValueChange={(v) => updateAsset(i, { type: v })}>
-                <SelectTrigger className="flex-1 min-w-[140px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ASSET_TYPES.map((a) => (
-                    <SelectItem key={a.type} value={a.type}>{a.type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div key={i} className="border-b border-dashed border-paper-border pb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={asset.type} onValueChange={(v) => updateAsset(i, { type: v })}>
+                  <SelectTrigger className="flex-1 min-w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ASSET_TYPES.map((a) => (
+                      <SelectItem key={a.type} value={a.type}>{a.type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  className="w-20"
+                  placeholder="Qty"
+                  value={asset.qty}
+                  onChange={(e) => updateAsset(i, { qty: Number(e.target.value) || 0 })}
+                />
+                <Input
+                  type="number"
+                  className="w-24"
+                  placeholder="$/unit"
+                  value={asset.rate}
+                  onChange={(e) => updateAsset(i, { rate: Number(e.target.value) || 0 })}
+                />
+                <Button variant="outline" size="sm" onClick={() => removeAsset(i)}>Remove</Button>
+              </div>
               <Input
-                type="number"
-                className="w-20"
-                placeholder="Qty"
-                value={asset.qty}
-                onChange={(e) => updateAsset(i, { qty: Number(e.target.value) || 0 })}
+                className="mt-1.5 text-[12px]"
+                placeholder="Note — brief / reference / special instructions (optional)"
+                value={asset.note ?? ""}
+                onChange={(e) => updateAsset(i, { note: e.target.value })}
               />
-              <Input
-                type="number"
-                className="w-24"
-                placeholder="$/unit"
-                value={asset.rate}
-                onChange={(e) => updateAsset(i, { rate: Number(e.target.value) || 0 })}
-              />
-              <Button variant="outline" size="sm" onClick={() => removeAsset(i)}>Remove</Button>
             </div>
           ))}
         </div>
