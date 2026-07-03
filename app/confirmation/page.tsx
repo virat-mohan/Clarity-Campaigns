@@ -10,17 +10,21 @@ import { CheckCircle2 } from "lucide-react";
 
 export default function ConfirmationPage() {
   const order = useCampaignStore((s) => s.lastOrder);
+  const campaigns = useCampaignStore((s) => s.campaigns);
 
   if (!order) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <p className="text-muted-foreground">No recent order found.</p>
-        <Link href="/"><Button className="mt-4">Back to marketplace</Button></Link>
+        <Link href="/campaigns">
+          <Button className="mt-4">My Campaigns</Button>
+        </Link>
       </div>
     );
   }
 
   const ct = CAMPAIGN_TYPES[order.sku];
+  const campaign = campaigns.find((c) => c.id === order.campaignId);
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
@@ -39,7 +43,14 @@ export default function ConfirmationPage() {
                 <td className="py-1.5 font-mono text-primary">{order.referenceNumber}</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 text-muted-foreground">Campaign type</td>
+                <td className="py-1.5 text-muted-foreground">Campaign</td>
+                <td className="py-1.5">
+                  {campaign?.config.name || ct.label}
+                  {campaign?.config.client ? ` · ${campaign.config.client}` : ""}
+                </td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 text-muted-foreground">Type</td>
                 <td className="py-1.5">{ct.label}</td>
               </tr>
               <tr className="border-b border-border">
@@ -60,7 +71,16 @@ export default function ConfirmationPage() {
         </CardContent>
       </Card>
 
-      <Link href="/"><Button className="mt-6">Back to marketplace</Button></Link>
+      <div className="mt-6 flex items-center justify-center gap-3">
+        {campaign && (
+          <Link href={`/build/${campaign.id}`}>
+            <Button variant="outline">View campaign</Button>
+          </Link>
+        )}
+        <Link href="/campaigns">
+          <Button>My Campaigns</Button>
+        </Link>
+      </div>
     </div>
   );
 }

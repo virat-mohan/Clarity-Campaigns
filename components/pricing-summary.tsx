@@ -5,6 +5,7 @@ import { CampaignConfig, VendorToggleState, CustomVendorLine } from "@/lib/store
 import { PodRow } from "@/lib/calc/staffing";
 import { computePricing, outcomeTargetFor, PriceMode, OutcomeMetric, VendorLine } from "@/lib/calc/pricing";
 import { AdminVendor, useAdminStore } from "@/lib/store/admin-store";
+import { HelpTooltip } from "@/components/help-tooltip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,10 @@ export function PricingSummary({
   pod: PodRow[];
   onChange: (partial: Partial<CampaignConfig>) => void;
 }) {
+  const adminVendors = useAdminStore((s) => s.vendors);
+  const markupFixed = useAdminStore((s) => s.markupFixed);
+  const markupHybrid = useAdminStore((s) => s.markupHybrid);
+
   const outcomeTarget = outcomeTargetFor(config.outcomeMetric, {
     audienceSize: config.audienceSize,
     qualifiedPct: config.qualifiedPct,
@@ -56,7 +61,6 @@ export function PricingSummary({
     closePct: config.closePct,
     asp: config.asp,
   });
-  const adminVendors = useAdminStore((s) => s.vendors);
   const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors);
 
   const pricing = computePricing({
@@ -76,11 +80,12 @@ export function PricingSummary({
     outcomeRate: config.outcomeRate,
     outcomeDeltaRate: config.outcomeDeltaRate,
     outcomeDeltaThreshold: config.outcomeDeltaThreshold,
+    markupFixed,
+    markupHybrid,
   });
 
   const metricLabel = outcomeMetricLabel(config.outcomeMetric, config.outcomeCustomLabel);
 
-  // Split vendor lines: influencer shown as own at-cost line, others grouped
   const influencerLines = vendorLines.filter(
     (v) => adminVendors.find((a) => a.id === v.id)?.mediaType === "influencer" && v.currency === "USD"
   );
@@ -91,8 +96,15 @@ export function PricingSummary({
   const influencerCost = influencerLines.reduce((s, v) => s + v.cost, 0);
   const otherVendorCostUsd = otherVendorLinesUsd.reduce((s, v) => s + v.cost, 0);
 
+  // Break-even calculator (margin-based)
+  const margin = 0.4; // 40% default margin assumption
+  const dealsToBreakeven = pricing.grandTotal > 0 && config.asp > 0
+    ? Math.ceil(pricing.grandTotal / (config.asp * margin))
+    : null;
+
   return (
     <div>
+      {/* Pricing mode toggle */}
       <div className="mb-4 flex gap-2">
         {(["fixed", "hybrid"] as PriceMode[]).map((mode) => (
           <button
@@ -105,19 +117,29 @@ export function PricingSummary({
                 : "border-border-strong text-muted-foreground hover:border-primary/50"
             )}
           >
-            {mode === "fixed" ? "Fixed (4x cost)" : "Fixed + Variable"}
+            {mode === "fixed"
+              ? `Fixed (${markupFixed}× cost)`
+              : `Fixed + Variable (${markupHybrid}× base)`}
           </button>
         ))}
       </div>
 
+      {/* Hybrid variable payout config */}
       {config.priceMode === "hybrid" && (
         <Card className="mb-4 bg-paper border-paper-border text-paper-foreground">
           <CardContent className="pt-4">
-            <div className="font-mono-label text-[9.5px] text-primary-hover mb-3">Variable payout structure</div>
+            <div className="font-mono-label text-[9.5px] text-primary-hover mb-3 flex items-center">
+              Variable payout structure
+              <HelpTooltip>
+                Fixed + Variable (hybrid): the agency charges a lower fixed base ({markupHybrid}× cost) plus a per-outcome fee invoiced once results are confirmed. This aligns incentives — you only pay for performance above the baseline.
+              </HelpTooltip>
+            </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mb-4">
               <div>
-                <Label>Outcome metric</Label>
+                <Label>Outcome metric
+                  <HelpTooltip>The milestone that triggers the variable invoice — qualified lead, meeting booked, or closed deal.</HelpTooltip>
+                </Label>
                 <Select value={config.outcomeMetric} onValueChange={(v) => onChange({ outcomeMetric: v as OutcomeMetric })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -147,49 +169,48 @@ export function PricingSummary({
                 <Input type="number" value={config.outcomeRate} onChange={(e) => onChange({ outcomeRate: Number(e.target.value) || 0 })} />
               </div>
               <div>
-                <Label>Bonus rate above threshold ($/extra {metricLabel})</Label>
+                <Label>Bonus rate above threshold ($/extra {metricLabel})
+                  <HelpTooltip>Once delivery exceeds the threshold, each additional outcome beyond that level is billed at this higher rate.</HelpTooltip>
+                </Label>
                 <Input type="number" value={config.outcomeDeltaRate} onChange={(e) => onChange({ outcomeDeltaRate: Number(e.target.value) || 0 })} />
               </div>
               <div>
-                <Label>Bonus kicks in above target by (% threshold)</Label>
+                <Label>Bonus kicks in above target by (%)
+                  <HelpTooltip>E.g. 10% means the bonus rate only applies to outcomes delivered more than 10% above the baseline target.</HelpTooltip>
+                </Label>
                 <Input type="number" value={config.outcomeDeltaThreshold} onChange={(e) => onChange({ outcomeDeltaThreshold: Number(e.target.value) || 0 })} />
               </div>
             </div>
 
-            {/* Formula breakdown */}
             <div className="rounded-[3px] border border-paper-border bg-muted/30 p-3 mb-3 text-[12px]">
               <div className="font-mono-label text-[8.5px] text-muted-foreground mb-2">How it&apos;s calculated</div>
               <div className="space-y-1 text-foreground">
-                <div><span className="text-muted-foreground w-36 inline-block">Fixed component</span> Cost × 3 = {fmtMoney(pricing.fixedComponent)}</div>
-                <div><span className="text-muted-foreground w-36 inline-block">At-target variable</span> {outcomeTarget} {metricLabel}s × {fmtMoney(config.outcomeRate)} = {fmtMoney(pricing.baselineVariable)}</div>
+                <div><span className="text-muted-foreground w-36 inline-block">Fixed component</span> Cost × {markupHybrid} = {fmtMoney(pricing.fixedComponent)}</div>
+                <div><span className="text-muted-foreground w-36 inline-block">At-target variable</span> {outcomeTarget} × {fmtMoney(config.outcomeRate)} = {fmtMoney(pricing.baselineVariable)}</div>
                 <div><span className="text-muted-foreground w-36 inline-block">Bonus threshold</span> Triggered above {config.outcomeDeltaThreshold}% over target ({Math.round(outcomeTarget * (1 + config.outcomeDeltaThreshold / 100))} {metricLabel}s)</div>
                 <div><span className="text-muted-foreground w-36 inline-block">Bonus rate</span> {fmtMoney(config.outcomeDeltaRate)} per extra {metricLabel} above threshold</div>
               </div>
             </div>
 
-            {/* Worked example */}
             {outcomeTarget > 0 && config.outcomeRate > 0 && (() => {
               const thresholdCount = Math.ceil(outcomeTarget * (1 + config.outcomeDeltaThreshold / 100));
-              const exampleDelivered = Math.round(outcomeTarget * 1.3); // show 30% over target
+              const exampleDelivered = Math.round(outcomeTarget * 1.3);
               const aboveThreshold = Math.max(0, exampleDelivered - thresholdCount);
               const exampleDelta = aboveThreshold * config.outcomeDeltaRate;
-              const exampleTotal = pricing.fixedComponent + pricing.baselineVariable + exampleDelta;
               return (
                 <div className="rounded-[3px] border border-secondary/30 bg-secondary/5 p-3 text-[11.5px]">
                   <div className="font-mono-label text-[8.5px] text-secondary mb-2">Worked example — if you deliver {exampleDelivered} {metricLabel}s (30% above target)</div>
                   <div className="space-y-0.5 text-foreground">
-                    <div className="flex justify-between"><span>Fixed (cost × 3)</span><span className="font-mono">{fmtMoney(pricing.fixedComponent)}</span></div>
+                    <div className="flex justify-between"><span>Fixed (cost × {markupHybrid})</span><span className="font-mono">{fmtMoney(pricing.fixedComponent)}</span></div>
                     <div className="flex justify-between"><span>At-target variable ({outcomeTarget} × {fmtMoney(config.outcomeRate)})</span><span className="font-mono">{fmtMoney(pricing.baselineVariable)}</span></div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Threshold at {config.outcomeDeltaThreshold}% above target → {thresholdCount} {metricLabel}s</span>
-                    </div>
+                    <div className="text-muted-foreground text-[10.5px]">Threshold at {config.outcomeDeltaThreshold}% → {thresholdCount} {metricLabel}s</div>
                     {aboveThreshold > 0 ? (
                       <div className="flex justify-between"><span>Bonus: {aboveThreshold} extra × {fmtMoney(config.outcomeDeltaRate)}</span><span className="font-mono text-secondary">+ {fmtMoney(exampleDelta)}</span></div>
                     ) : (
                       <div className="text-muted-foreground">No bonus — delivery doesn&apos;t clear the {config.outcomeDeltaThreshold}% threshold</div>
                     )}
-                    <div className="flex justify-between border-t border-secondary/20 pt-1 mt-1 font-semibold"><span>Total invoice (variable portion)</span><span className="font-mono">{fmtMoney(pricing.fixedComponent + pricing.baselineVariable + exampleDelta)}</span></div>
-                    <div className="flex justify-between text-muted-foreground text-[10.5px]"><span>+ ad spend + vendor costs on top (at cost)</span><span className="font-mono">{fmtMoney(pricing.adSpend + pricing.vendorCostUsd)}</span></div>
+                    <div className="flex justify-between border-t border-secondary/20 pt-1 mt-1 font-semibold"><span>Total variable invoice</span><span className="font-mono">{fmtMoney(pricing.fixedComponent + pricing.baselineVariable + exampleDelta)}</span></div>
+                    <div className="flex justify-between text-muted-foreground text-[10.5px]"><span>+ ad spend + vendor costs (at cost)</span><span className="font-mono">{fmtMoney(pricing.adSpend + pricing.vendorCostUsd)}</span></div>
                   </div>
                 </div>
               );
@@ -199,10 +220,12 @@ export function PricingSummary({
       )}
 
       <div className="flex flex-col gap-3">
-        {/* Pod / Human cost — its own card */}
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="font-mono-label text-[9px] text-muted-foreground mb-2">Human cost (pod)</div>
+            <div className="font-mono-label text-[9px] text-muted-foreground mb-2 flex items-center">
+              Human cost (pod)
+              <HelpTooltip>Total hours × hourly rate for each pod role. This cost is subject to the {pricing.multiple}× margin multiple.</HelpTooltip>
+            </div>
             <table className="w-full text-[12.5px]">
               <tbody>
                 <tr className="border-b border-border">
@@ -211,16 +234,13 @@ export function PricingSummary({
                 </tr>
                 <tr>
                   <td className="py-1 text-[11px] text-muted-foreground-2">After {pricing.multiple}× multiple</td>
-                  <td className="py-1 text-right font-mono text-[11px] text-muted-foreground-2">
-                    {fmtMoney(pricing.podCost * pricing.multiple)}
-                  </td>
+                  <td className="py-1 text-right font-mono text-[11px] text-muted-foreground-2">{fmtMoney(pricing.podCost * pricing.multiple)}</td>
                 </tr>
               </tbody>
             </table>
           </CardContent>
         </Card>
 
-        {/* Production / assets / tech */}
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="font-mono-label text-[9px] text-muted-foreground mb-2">Production &amp; tech</div>
@@ -238,16 +258,13 @@ export function PricingSummary({
                 </tr>
                 <tr>
                   <td className="py-1 text-[11px] text-muted-foreground-2">After {pricing.multiple}× multiple</td>
-                  <td className="py-1 text-right font-mono text-[11px] text-muted-foreground-2">
-                    {fmtMoney((pricing.assetCost + pricing.techCost) * pricing.multiple)}
-                  </td>
+                  <td className="py-1 text-right font-mono text-[11px] text-muted-foreground-2">{fmtMoney((pricing.assetCost + pricing.techCost) * pricing.multiple)}</td>
                 </tr>
               </tbody>
             </table>
           </CardContent>
         </Card>
 
-        {/* Client price summary */}
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="font-mono-label text-[9px] text-muted-foreground mb-2">Client price</div>
@@ -255,13 +272,13 @@ export function PricingSummary({
               <tbody>
                 {config.priceMode === "fixed" ? (
                   <tr className="border-b border-border">
-                    <td className="py-1.5 text-muted-foreground">Total cost × 4</td>
+                    <td className="py-1.5 text-muted-foreground">Total cost × {markupFixed}</td>
                     <td className="py-1.5 text-right font-mono">{fmtMoney(pricing.fixedComponent)}</td>
                   </tr>
                 ) : (
                   <>
                     <tr className="border-b border-border">
-                      <td className="py-1.5 text-muted-foreground">Total cost × 3 (fixed)</td>
+                      <td className="py-1.5 text-muted-foreground">Total cost × {markupHybrid} (fixed)</td>
                       <td className="py-1.5 text-right font-mono">{fmtMoney(pricing.fixedComponent)}</td>
                     </tr>
                     <tr className="border-b border-border">
@@ -281,10 +298,12 @@ export function PricingSummary({
           </CardContent>
         </Card>
 
-        {/* At-cost items — separate from price multiple */}
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="font-mono-label text-[9px] text-muted-foreground mb-2">At-cost — separate from price multiple</div>
+            <div className="font-mono-label text-[9px] text-muted-foreground mb-2 flex items-center">
+              At-cost — separate from price multiple
+              <HelpTooltip>Ad spend, influencer fees, and vendor costs are passed through at cost — they are never marked up and are invoiced separately from the agency fee.</HelpTooltip>
+            </div>
             <table className="w-full text-[12.5px]">
               <tbody>
                 <tr className="border-b border-dashed border-border">
@@ -306,7 +325,7 @@ export function PricingSummary({
                     <td className="py-1.5 text-right font-mono">{fmtMoney(otherVendorCostUsd)}</td>
                   </tr>
                 )}
-                {pricing.specialistCostInr > 0 && (
+                {specialistLinesInr.length > 0 && (
                   <tr className="border-b border-dashed border-border">
                     <td className="py-1.5 text-muted-foreground">Specialist retainer capacity (₹)</td>
                     <td className="py-1.5 text-right font-mono">{fmtInr(pricing.specialistCostInr)}</td>
@@ -314,14 +333,41 @@ export function PricingSummary({
                 )}
                 <tr>
                   <td className="py-2 font-heading text-[15px] font-semibold">Grand total (USD)</td>
-                  <td className="py-2 text-right font-heading text-[17px] font-semibold text-primary">
-                    {fmtMoney(pricing.grandTotal)}
-                  </td>
+                  <td className="py-2 text-right font-heading text-[17px] font-semibold text-primary">{fmtMoney(pricing.grandTotal)}</td>
                 </tr>
               </tbody>
             </table>
           </CardContent>
         </Card>
+
+        {/* Break-even calculator */}
+        {dealsToBreakeven !== null && (
+          <Card className="bg-paper border-paper-border">
+            <CardContent className="pt-4 pb-3">
+              <div className="font-mono-label text-[9px] text-muted-foreground mb-2 flex items-center">
+                Break-even calculator
+                <HelpTooltip>Assumes a 40% margin on your ASP (avg. selling price). Deals needed = Grand Total ÷ (ASP × 40%). Adjust your ASP in the Expected Results step to update this.</HelpTooltip>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-[3px] bg-muted px-3 py-3">
+                  <div className="font-heading text-xl font-semibold text-foreground">{dealsToBreakeven}</div>
+                  <div className="text-[10.5px] text-muted-foreground mt-0.5">deals to break even</div>
+                </div>
+                <div className="rounded-[3px] bg-muted px-3 py-3">
+                  <div className="font-heading text-xl font-semibold text-foreground">{Math.ceil(dealsToBreakeven * 2)}</div>
+                  <div className="text-[10.5px] text-muted-foreground mt-0.5">deals for 2× ROI</div>
+                </div>
+                <div className="rounded-[3px] bg-muted px-3 py-3">
+                  <div className="font-heading text-xl font-semibold text-foreground">{Math.ceil(dealsToBreakeven * 3)}</div>
+                  <div className="text-[10.5px] text-muted-foreground mt-0.5">deals for 3× ROI</div>
+                </div>
+              </div>
+              <p className="mt-2 text-[10.5px] text-muted-foreground">
+                Based on {fmtMoney(config.asp)} ASP · 40% margin assumption · {fmtMoney(pricing.grandTotal)} grand total
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

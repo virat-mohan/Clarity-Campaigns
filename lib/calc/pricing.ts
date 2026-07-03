@@ -90,6 +90,8 @@ export interface PricingInput {
   outcomeRate: number;
   outcomeDeltaRate: number;
   outcomeDeltaThreshold: number;
+  markupFixed?: number;  // override default 4× multiplier
+  markupHybrid?: number; // override default 3× multiplier for hybrid base
 }
 
 export interface PricingResult {
@@ -104,7 +106,7 @@ export interface PricingResult {
   vendorCostUsd: number; // separate, at-cost, never multiplied (video/influencer vendors, USD)
   specialistCostInr: number; // separate, at-cost, never multiplied (retainer specialists, INR — kept out of USD total)
   grandTotal: number; // totalPrice + adSpend + vendorCostUsd (USD only; specialistCostInr shown separately)
-  multiple: 3 | 4;
+  multiple: number;
 }
 
 // Ported pricing logic: Fixed = cost * 4. Fixed+Variable (hybrid) = cost * 3 fixed,
@@ -132,18 +134,21 @@ export function computePricing(input: PricingInput): PricingResult {
     .filter((v) => v.currency === "INR")
     .reduce((sum, v) => sum + (v.cost || 0), 0);
 
+  const mFixed = input.markupFixed ?? 4;
+  const mHybrid = input.markupHybrid ?? 3;
+
   let fixedComponent = 0;
   let baselineVariable = 0;
   let totalPrice = 0;
-  let multiple: 3 | 4 = 4;
+  let multiple: number = 4;
 
   if (input.priceMode === "fixed") {
-    multiple = 4;
-    fixedComponent = totalCost * 4;
+    multiple = mFixed;
+    fixedComponent = totalCost * mFixed;
     totalPrice = fixedComponent;
   } else {
-    multiple = 3;
-    fixedComponent = totalCost * 3;
+    multiple = mHybrid;
+    fixedComponent = totalCost * mHybrid;
     baselineVariable = input.outcomeTarget * input.outcomeRate;
     totalPrice = fixedComponent + baselineVariable;
   }

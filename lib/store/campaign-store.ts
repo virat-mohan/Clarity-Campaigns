@@ -18,60 +18,46 @@ export interface BrandContext {
 
 export interface VendorToggleState {
   on: boolean;
-  cost: number | null; // null = TBD/blank
+  cost: number | null;
 }
 
 export interface CustomVendorLine {
   id: string;
   name: string;
-  cost: number | null; // null = TBD/blank
+  cost: number | null;
 }
 
 export interface CampaignConfig {
-  // Overview
   client: string;
   name: string;
   objective: string;
   goal: string;
   sell: string;
-  // Audience & Targeting
   icp: string;
   audienceSize: number;
   source: string;
-  industry: string; // for marketing-mode SKUs
-  // Channels & Assets
+  industry: string;
   channels: string[];
   assets: { type: string; qty: number; rate: number; note?: string }[];
   emailSteps: number;
   liSteps: number;
   waSteps: number;
-  // Funnel & Commercial
   qualifiedPct: number;
   opportunityPct: number;
   closePct: number;
   asp: number;
   adSpend: number;
   adSpendCadence: "monthly" | "onetime";
-  // Delivery
   owner: string;
   weeks: number;
   sprints: number;
   notes: string;
   risks: string;
-  // Vendor toggles, keyed by roster id
   vendorToggles: Record<string, VendorToggleState>;
-  // Any other vendor/specialist not in the roster — freeform name + cost.
   customVendors: CustomVendorLine[];
-  // Pod hours/rate/role overrides, keyed by PROCS step number. Suggested
-  // standards pre-fill the pod; these overrides are set only when a user
-  // edits a value (including swapping which role is staffed on a step).
   podOverrides: Record<number, { role: string; hours: number; rate: number }>;
-  // Named freelancer pulled onto a pod step, keyed by PROCS step number ->
-  // freelancer id (from the admin store). Absent = unassigned.
   podAssignments: Record<number, string>;
-  // Timeline
   timelineApproved: boolean;
-  // Pricing
   priceMode: PriceMode;
   outcomeMetric: OutcomeMetric;
   outcomeCustomLabel: string;
@@ -80,16 +66,27 @@ export interface CampaignConfig {
   outcomeDeltaThreshold: number;
 }
 
-// Cached per sku so repeated reads before any edit return the same object
-// reference — required for useSyncExternalStore snapshot stability.
-const defaultConfigCache = new Map<SkuId, CampaignConfig>();
+export type CampaignStatus = "draft" | "proposal-sent" | "active" | "reporting" | "completed";
 
-function defaultConfig(sku: SkuId): CampaignConfig {
-  const cached = defaultConfigCache.get(sku);
-  if (cached) return cached;
-  const built = buildDefaultConfig(sku);
-  defaultConfigCache.set(sku, built);
-  return built;
+export interface CampaignActuals {
+  meetings?: number;
+  leads?: number;
+  deals?: number;
+  revenue?: number;
+  roas?: number;
+  cpl?: number;
+  notes?: string;
+}
+
+export interface Campaign {
+  id: string;
+  sku: SkuId;
+  status: CampaignStatus;
+  clientId?: string;
+  createdAt: number;
+  updatedAt: number;
+  config: CampaignConfig;
+  actuals?: CampaignActuals;
 }
 
 function buildDefaultConfig(sku: SkuId): CampaignConfig {
@@ -138,6 +135,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
 
 export interface OrderRecord {
   referenceNumber: string;
+  campaignId: string;
   sku: SkuId;
   paidAt: string;
   grandTotal: number;
@@ -145,22 +143,39 @@ export interface OrderRecord {
   variableNote: string | null;
 }
 
+function newCampaignId(): string {
+  return `camp-${Date.now()}-${Math.round(Math.random() * 10000)}`;
+}
+
+// Update a campaign's config and touch updatedAt in one place.
+function withConfig(campaigns: Campaign[], id: string, updater: (c: CampaignConfig) => Partial<CampaignConfig>): Campaign[] {
+  return campaigns.map((c) =>
+    c.id !== id ? c : { ...c, config: { ...c.config, ...updater(c.config) }, updatedAt: Date.now() }
+  );
+}
+
 interface CampaignStoreState {
   brand: BrandContext | null;
-  configs: Partial<Record<SkuId, CampaignConfig>>;
+  campaigns: Campaign[];
   lastOrder: OrderRecord | null;
   setBrand: (brand: BrandContext) => void;
-  getConfig: (sku: SkuId) => CampaignConfig;
-  updateConfig: (sku: SkuId, partial: Partial<CampaignConfig>) => void;
-  setVendorToggle: (sku: SkuId, vendorId: string, state: VendorToggleState) => void;
-  setPodOverride: (sku: SkuId, stepNumber: number, override: { role: string; hours: number; rate: number }) => void;
-  resetPodOverride: (sku: SkuId, stepNumber: number) => void;
-  setPodAssignment: (sku: SkuId, stepNumber: number, freelancerId: string) => void;
-  clearPodAssignment: (sku: SkuId, stepNumber: number) => void;
-  addCustomVendor: (sku: SkuId) => void;
-  updateCustomVendor: (sku: SkuId, id: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
-  removeCustomVendor: (sku: SkuId, id: string) => void;
-  approveTimeline: (sku: SkuId) => void;
+  // campaign CRUD
+  createCampaign: (sku: SkuId, clientId?: string) => string;
+  duplicateCampaign: (id: string) => string;
+  deleteCampaign: (id: string) => void;
+  setStatus: (id: string, status: CampaignStatus) => void;
+  updateActuals: (id: string, partial: Partial<CampaignActuals>) => void;
+  // config mutations
+  updateConfig: (id: string, partial: Partial<CampaignConfig>) => void;
+  setVendorToggle: (id: string, vendorId: string, state: VendorToggleState) => void;
+  setPodOverride: (id: string, stepNumber: number, override: { role: string; hours: number; rate: number }) => void;
+  resetPodOverride: (id: string, stepNumber: number) => void;
+  setPodAssignment: (id: string, stepNumber: number, freelancerId: string) => void;
+  clearPodAssignment: (id: string, stepNumber: number) => void;
+  addCustomVendor: (id: string) => void;
+  updateCustomVendor: (id: string, vendorId: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
+  removeCustomVendor: (id: string, vendorId: string) => void;
+  approveTimeline: (id: string) => void;
   setLastOrder: (order: OrderRecord) => void;
 }
 
@@ -168,103 +183,138 @@ export const useCampaignStore = create<CampaignStoreState>()(
   persist(
     (set, get) => ({
       brand: null,
-      configs: {},
+      campaigns: [],
       lastOrder: null,
+
       setBrand: (brand) => set({ brand }),
-      getConfig: (sku) => get().configs[sku] ?? defaultConfig(sku),
-      updateConfig: (sku, partial) =>
-        set((state) => ({
-          configs: {
-            ...state.configs,
-            [sku]: { ...(state.configs[sku] ?? defaultConfig(sku)), ...partial },
+
+      createCampaign: (sku, clientId) => {
+        const id = newCampaignId();
+        const campaign: Campaign = {
+          id,
+          sku,
+          status: "draft",
+          clientId,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          config: buildDefaultConfig(sku),
+        };
+        const brand = get().brand;
+        if (brand?.processed && brand.icpSnippet) {
+          campaign.config = { ...campaign.config, icp: brand.icpSnippet };
+        }
+        set((s) => ({ campaigns: [...s.campaigns, campaign] }));
+        return id;
+      },
+
+      duplicateCampaign: (id) => {
+        const source = get().campaigns.find((c) => c.id === id);
+        if (!source) return id;
+        const newId = newCampaignId();
+        const copy: Campaign = {
+          ...source,
+          id: newId,
+          status: "draft",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          config: {
+            ...source.config,
+            name: source.config.name ? `${source.config.name} (copy)` : "",
           },
+          actuals: undefined,
+        };
+        set((s) => ({ campaigns: [...s.campaigns, copy] }));
+        return newId;
+      },
+
+      deleteCampaign: (id) =>
+        set((s) => ({ campaigns: s.campaigns.filter((c) => c.id !== id) })),
+
+      setStatus: (id, status) =>
+        set((s) => ({
+          campaigns: s.campaigns.map((c) =>
+            c.id !== id ? c : { ...c, status, updatedAt: Date.now() }
+          ),
         })),
-      setVendorToggle: (sku, vendorId, vendorState) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: {
-                ...current,
-                vendorToggles: { ...current.vendorToggles, [vendorId]: vendorState },
-              },
-            },
-          };
-        }),
-      setPodOverride: (sku, stepNumber, override) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: { ...current, podOverrides: { ...current.podOverrides, [stepNumber]: override } },
-            },
-          };
-        }),
-      resetPodOverride: (sku, stepNumber) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          const nextOverrides = { ...current.podOverrides };
-          delete nextOverrides[stepNumber];
-          return { configs: { ...state.configs, [sku]: { ...current, podOverrides: nextOverrides } } };
-        }),
-      setPodAssignment: (sku, stepNumber, freelancerId) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: { ...current, podAssignments: { ...current.podAssignments, [stepNumber]: freelancerId } },
-            },
-          };
-        }),
-      clearPodAssignment: (sku, stepNumber) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          const next = { ...current.podAssignments };
-          delete next[stepNumber];
-          return { configs: { ...state.configs, [sku]: { ...current, podAssignments: next } } };
-        }),
-      addCustomVendor: (sku) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          const id = `custom-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: { ...current, customVendors: [...current.customVendors, { id, name: "", cost: null }] },
-            },
-          };
-        }),
-      updateCustomVendor: (sku, id, partial) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: {
-                ...current,
-                customVendors: current.customVendors.map((v) => (v.id === id ? { ...v, ...partial } : v)),
-              },
-            },
-          };
-        }),
-      removeCustomVendor: (sku, id) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return {
-            configs: {
-              ...state.configs,
-              [sku]: { ...current, customVendors: current.customVendors.filter((v) => v.id !== id) },
-            },
-          };
-        }),
-      approveTimeline: (sku) =>
-        set((state) => {
-          const current = state.configs[sku] ?? defaultConfig(sku);
-          return { configs: { ...state.configs, [sku]: { ...current, timelineApproved: true } } };
-        }),
+
+      updateActuals: (id, partial) =>
+        set((s) => ({
+          campaigns: s.campaigns.map((c) =>
+            c.id !== id ? c : { ...c, actuals: { ...c.actuals, ...partial }, updatedAt: Date.now() }
+          ),
+        })),
+
+      updateConfig: (id, partial) =>
+        set((s) => ({ campaigns: withConfig(s.campaigns, id, () => partial) })),
+
+      setVendorToggle: (id, vendorId, vendorState) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            vendorToggles: { ...c.vendorToggles, [vendorId]: vendorState },
+          })),
+        })),
+
+      setPodOverride: (id, stepNumber, override) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podOverrides: { ...c.podOverrides, [stepNumber]: override },
+          })),
+        })),
+
+      resetPodOverride: (id, stepNumber) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => {
+            const next = { ...c.podOverrides };
+            delete next[stepNumber];
+            return { podOverrides: next };
+          }),
+        })),
+
+      setPodAssignment: (id, stepNumber, freelancerId) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podAssignments: { ...c.podAssignments, [stepNumber]: freelancerId },
+          })),
+        })),
+
+      clearPodAssignment: (id, stepNumber) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => {
+            const next = { ...c.podAssignments };
+            delete next[stepNumber];
+            return { podAssignments: next };
+          }),
+        })),
+
+      addCustomVendor: (id) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            customVendors: [
+              ...c.customVendors,
+              { id: `custom-${Date.now()}-${Math.round(Math.random() * 1000)}`, name: "", cost: null },
+            ],
+          })),
+        })),
+
+      updateCustomVendor: (id, vendorId, partial) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            customVendors: c.customVendors.map((v) => (v.id === vendorId ? { ...v, ...partial } : v)),
+          })),
+        })),
+
+      removeCustomVendor: (id, vendorId) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            customVendors: c.customVendors.filter((v) => v.id !== vendorId),
+          })),
+        })),
+
+      approveTimeline: (id) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, () => ({ timelineApproved: true })),
+        })),
+
       setLastOrder: (order) => set({ lastOrder: order }),
     }),
     { name: "clarity-campaign-marketplace" }

@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CAMPAIGN_TYPES, SkuId } from "@/lib/data/campaign-types";
+import { CAMPAIGN_TYPES } from "@/lib/data/campaign-types";
 import { useCampaignStore } from "@/lib/store/campaign-store";
 import { useAdminStore } from "@/lib/store/admin-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
@@ -24,33 +24,49 @@ function outcomeMetricLabel(metric: string, custom: string) {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sku = searchParams.get("sku") as SkuId | null;
-  const ct = sku ? CAMPAIGN_TYPES[sku] : null;
-  const config = useCampaignStore((s) => (sku ? s.getConfig(sku) : null));
+  const campaignId = searchParams.get("id");
+
+  const campaign = useCampaignStore((s) =>
+    campaignId ? s.campaigns.find((c) => c.id === campaignId) : null
+  );
   const setLastOrder = useCampaignStore((s) => s.setLastOrder);
+  const setStatus = useCampaignStore((s) => s.setStatus);
   const adminVendors = useAdminStore((s) => s.vendors);
+  const podTemplates = useAdminStore((s) => s.podTemplates);
+  const markupFixed = useAdminStore((s) => s.markupFixed);
+  const markupHybrid = useAdminStore((s) => s.markupHybrid);
 
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
 
-  const pod = useMemo(() => {
-    if (!sku) return [];
-    const suggested = buildAutoPod(sku, config?.audienceSize ?? 0);
-    return applyPodOverrides(suggested, config?.podOverrides ?? {});
-  }, [sku, config?.audienceSize, config?.podOverrides]);
-  const sprintBreakdown = useMemo(() => (sku ? buildSprintBreakdown(sku, config?.sprints ?? 1) : null), [sku, config?.sprints]);
+  const config = campaign?.config ?? null;
+  const sku = campaign?.sku ?? null;
+  const ct = sku ? CAMPAIGN_TYPES[sku] : null;
+  const templateSteps = sku ? podTemplates[sku] : undefined;
 
-  if (!ct || !config || !sku) {
+  const pod = useMemo(() => {
+    if (!sku || !config) return [];
+    const suggested = buildAutoPod(sku, config.audienceSize, templateSteps);
+    return applyPodOverrides(suggested, config.podOverrides ?? {});
+  }, [sku, config, templateSteps]);
+
+  const sprintBreakdown = useMemo(
+    () => (sku && config ? buildSprintBreakdown(sku, config.sprints ?? 1, templateSteps) : null),
+    [sku, config, templateSteps]
+  );
+
+  if (!ct || !config || !sku || !campaign || !campaignId) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <p className="text-muted-foreground">No campaign selected for checkout.</p>
-        <Button className="mt-4" onClick={() => router.push("/")}>Back to marketplace</Button>
+        <Button className="mt-4" onClick={() => router.push("/campaigns")}>
+          My Campaigns
+        </Button>
       </div>
     );
   }
 
   const cfg = config;
-  const skuId = sku;
   const vendorLines = vendorLinesFor(cfg.vendorToggles, cfg.customVendors, adminVendors);
   const outcomeTarget = outcomeTargetFor(cfg.outcomeMetric, {
     audienceSize: cfg.audienceSize,
@@ -60,7 +76,7 @@ function CheckoutContent() {
     asp: cfg.asp,
   });
   const pricing = computePricing({
-    sku: skuId,
+    sku,
     pod,
     assets: cfg.assets,
     audience: cfg.audienceSize,
@@ -76,6 +92,8 @@ function CheckoutContent() {
     outcomeRate: cfg.outcomeRate,
     outcomeDeltaRate: cfg.outcomeDeltaRate,
     outcomeDeltaThreshold: cfg.outcomeDeltaThreshold,
+    markupFixed,
+    markupHybrid,
   });
 
   const dueNow = pricing.totalPrice + pricing.adSpend + pricing.vendorCostUsd;
@@ -84,10 +102,11 @@ function CheckoutContent() {
   function handlePay() {
     setPaying(true);
     setTimeout(() => {
-      const referenceNumber = `CHQ-${skuId.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+      const referenceNumber = `CHQ-${sku!.toUpperCase()}-${Date.now().toString().slice(-6)}`;
       setLastOrder({
         referenceNumber,
-        sku: skuId,
+        campaignId: campaignId!,
+        sku: sku!,
         paidAt: new Date().toISOString(),
         grandTotal: pricing.grandTotal,
         fixedDueNow: dueNow,
@@ -96,6 +115,7 @@ function CheckoutContent() {
             ? `Variable component invoiced on completion, based on ${metricLabel} achieved.`
             : null,
       });
+      setStatus(campaignId!, "active");
       setPaying(false);
       setPaid(true);
       router.push("/confirmation");
@@ -105,7 +125,7 @@ function CheckoutContent() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-6 border-b border-border pb-4">
-        <div className="font-mono-label text-[10px] text-primary mb-1">Step 9 — Checkout</div>
+        <div className="font-mono-label text-[10px] text-primary mb-1">Checkout</div>
         <h1 className="font-heading text-2xl font-semibold">{cfg.name || "Untitled campaign"}</h1>
         <p className="text-[13px] text-muted-foreground mt-1">{ct.label} · order summary</p>
       </div>
@@ -129,7 +149,9 @@ function CheckoutContent() {
               </tr>
               <tr>
                 <td className="py-1.5 text-muted-foreground">Owner / Timeline</td>
-                <td className="py-1.5">{cfg.owner || "—"} · {cfg.weeks} weeks · {cfg.sprints} sprints</td>
+                <td className="py-1.5">
+                  {cfg.owner || "—"} · {cfg.weeks} weeks · {cfg.sprints} sprints
+                </td>
               </tr>
             </tbody>
           </table>
@@ -138,10 +160,15 @@ function CheckoutContent() {
 
       <Card className="mb-4">
         <CardContent className="pt-4">
-          <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">Pod ({pod.length} steps staffed)</div>
+          <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">
+            Pod ({pod.length} steps staffed)
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {Array.from(new Set(pod.map((p) => p.role))).map((role) => (
-              <span key={role} className="font-mono text-[10px] px-2 py-1 rounded-[3px] bg-muted text-muted-foreground-2">
+              <span
+                key={role}
+                className="font-mono text-[10px] px-2 py-1 rounded-[3px] bg-muted text-muted-foreground-2"
+              >
                 {role}
               </span>
             ))}
@@ -153,7 +180,8 @@ function CheckoutContent() {
         <CardContent className="pt-4">
           <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">Timeline</div>
           <p className="text-[12.5px]">
-            {sprintBreakdown?.totalDays} elapsed days · {sprintBreakdown?.approxWeeks} weeks · {sprintBreakdown?.sprints.length} sprints
+            {sprintBreakdown?.totalDays} elapsed days · {sprintBreakdown?.approxWeeks} weeks ·{" "}
+            {sprintBreakdown?.sprints.length} sprints
             {cfg.timelineApproved ? " — approved" : " — not yet approved"}
           </p>
         </CardContent>
@@ -169,7 +197,9 @@ function CheckoutContent() {
                 <td className="py-1.5 text-right font-mono">{fmtMoney(pricing.totalCost)}</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 text-muted-foreground">Client price ({cfg.priceMode})</td>
+                <td className="py-1.5 text-muted-foreground">
+                  Client price ({cfg.priceMode}) · {pricing.multiple}× cost
+                </td>
                 <td className="py-1.5 text-right font-mono">{fmtMoney(pricing.totalPrice)}</td>
               </tr>
               <tr className="border-b border-border">
@@ -182,7 +212,9 @@ function CheckoutContent() {
               </tr>
               <tr>
                 <td className="py-2 font-heading text-[15px] font-semibold">Grand total</td>
-                <td className="py-2 text-right font-heading text-[17px] font-semibold text-primary">{fmtMoney(pricing.grandTotal)}</td>
+                <td className="py-2 text-right font-heading text-[17px] font-semibold text-primary">
+                  {fmtMoney(pricing.grandTotal)}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -218,7 +250,11 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="px-4 py-16 text-center text-muted-foreground">Loading…</div>}>
+    <Suspense
+      fallback={
+        <div className="px-4 py-16 text-center text-muted-foreground">Loading…</div>
+      }
+    >
       <CheckoutContent />
     </Suspense>
   );

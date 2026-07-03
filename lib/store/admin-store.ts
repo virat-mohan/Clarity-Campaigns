@@ -113,6 +113,10 @@ interface AdminStoreState {
   freelancers: Freelancer[];
   vendors: AdminVendor[];
   podTemplates: Record<SkuId, PodTemplateStep[]>;
+  markupFixed: number;   // client price multiplier for fixed-price campaigns (default 4)
+  markupHybrid: number;  // cost multiplier for the fixed base in hybrid campaigns (default 3)
+  setMarkupFixed: (v: number) => void;
+  setMarkupHybrid: (v: number) => void;
   addFreelancer: () => void;
   updateFreelancer: (id: string, partial: Partial<Omit<Freelancer, "id">>) => void;
   removeFreelancer: (id: string) => void;
@@ -135,6 +139,10 @@ export const useAdminStore = create<AdminStoreState>()(
       freelancers: buildSeedFreelancers(),
       vendors: buildSeedVendors(),
       podTemplates: buildSeedPodTemplates(),
+      markupFixed: 4,
+      markupHybrid: 3,
+      setMarkupFixed: (v) => set({ markupFixed: Math.max(1, Math.min(10, v)) }),
+      setMarkupHybrid: (v) => set({ markupHybrid: Math.max(1, Math.min(10, v)) }),
       addFreelancer: () =>
         set((state) => ({
           freelancers: [

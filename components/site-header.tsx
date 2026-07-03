@@ -15,6 +15,12 @@ export function SiteHeader() {
           Campaign Marketplace
         </span>
         <div className="ml-auto flex items-center gap-3">
+          <Link href="/campaigns" className="font-mono text-[10.5px] text-muted-foreground hover:text-foreground">
+            My Campaigns
+          </Link>
+          <Link href="/client" className="font-mono text-[10.5px] text-muted-foreground hover:text-foreground">
+            Client Portal
+          </Link>
           <Link href="/admin" className="font-mono text-[10.5px] text-muted-foreground hover:text-foreground">
             Admin
           </Link>
