@@ -3,6 +3,7 @@ import { CampaignConfig } from "../store/campaign-store";
 import { PodRow } from "../calc/staffing";
 import { SprintBreakdown } from "../calc/sprint";
 import { PricingResult, VendorLine, outcomeTargetFor } from "../calc/pricing";
+import { Freelancer } from "../store/admin-store";
 import { fmtMoney, fmtInr } from "../utils";
 
 function esc(value: string | number): string {
@@ -30,6 +31,11 @@ const DOC_STYLES = `
   .note{font-size:11.5px;color:#6a7280;margin-top:4px}
   .deliverable{margin-top:6px;border-left:2px solid #e9941a;background:#f0ecdf;padding:6px 10px;font-size:12px;color:#4a4a44}
   footer{margin-top:36px;padding-top:14px;border-top:1px solid #e6e0d2;font-size:11.5px;color:#6a7280}
+  .bidgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .bidfield{border-bottom:1px solid #1b2129;min-height:22px;padding:2px 0}
+  .bidlabel{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#6a7280;margin-bottom:2px}
+  .status-open{color:#4d9685;font-weight:600}
+  .status-assigned{color:#e9941a;font-weight:600}
 `;
 
 function documentShell(title: string, body: string): string {
@@ -245,6 +251,74 @@ ${sprintBreakdown ? timelineHtml(sprintBreakdown) : ""}
       : ""
   }
 </div>`;
+  return documentShell(title, body);
+}
+
+function stepTimelineLookup(bd: SprintBreakdown | null): Map<string, { sprintN: number; rangeLabel: string }> {
+  const map = new Map<string, { sprintN: number; rangeLabel: string }>();
+  if (!bd) return map;
+  for (const sprint of bd.sprints) {
+    for (const row of sprint.rows) {
+      map.set(row.stepTitle, { sprintN: sprint.n, rangeLabel: row.rangeLabel });
+    }
+  }
+  return map;
+}
+
+// A neutral, freelancer-facing doc listing every pod role's scope, indicative
+// rate, and timeline window, with blank fields for a bid, availability, and an
+// intent-to-work confirmation — meant to be circulated for open bidding.
+export function buildFreelancerCallHtml(
+  ct: CampaignType,
+  config: CampaignConfig,
+  pod: PodRow[],
+  sprintBreakdown: SprintBreakdown | null,
+  freelancers: Freelancer[],
+  podAssignments: Record<number, string>
+): string {
+  const title = `${config.name || "Untitled campaign"} — Freelancer Call for Bids`;
+  const timelineLookup = stepTimelineLookup(sprintBreakdown);
+
+  const body = `
+<div class="eyebrow">Call for Bids — Freelancer Scope of Work</div>
+<h1>${esc(config.name || "Untitled campaign")}</h1>
+<p class="meta">${esc(ct.label)} · ${esc(config.client || "Client withheld pending assignment")} · Generated ${new Date().toLocaleDateString()}</p>
+
+<div class="card">
+  <p>We&apos;re staffing the roles below for this campaign. Review the scope and deliverable for any role
+  you&apos;re interested in, then submit your proposed rate, availability, and confirm your intent to work
+  using the fields provided.</p>
+  <p class="note">Timeline: ${sprintBreakdown ? `${sprintBreakdown.totalDays} elapsed days · ~${sprintBreakdown.approxWeeks} weeks · ${sprintBreakdown.sprints.length} sprints` : "TBD"} · Channels: ${config.channels.join(", ")}</p>
+</div>
+
+${pod
+  .map((row) => {
+    const assignedId = podAssignments[row.stepNumber];
+    const assignedFreelancer = freelancers.find((f) => f.id === assignedId);
+    const timing = timelineLookup.get(row.stepTitle);
+    return `<div class="card">
+  <table><tr>
+    <td style="width:26px">${row.stepNumber}</td>
+    <td><strong>${esc(row.stepTitle)}</strong><br><span class="note">${esc(row.role)}</span></td>
+    <td class="num">
+      ${row.hours} hrs indicative<br>
+      ${fmtMoney(row.rate)}/hr indicative<br>
+      ${timing ? `Sprint ${timing.sprintN} · ${esc(timing.rangeLabel)}` : ""}
+    </td>
+  </tr></table>
+  <div class="deliverable">${esc(row.out)}</div>
+  <p class="note" style="margin-top:8px">
+    Status: ${assignedFreelancer ? `<span class="status-assigned">Provisionally assigned — ${esc(assignedFreelancer.name)}</span>` : `<span class="status-open">Open — accepting bids</span>`}
+  </p>
+  <div class="bidgrid">
+    <div><div class="bidlabel">Your name</div><div class="bidfield"></div></div>
+    <div><div class="bidlabel">Proposed rate ($/hr or fixed)</div><div class="bidfield"></div></div>
+    <div><div class="bidlabel">Availability / start date</div><div class="bidfield"></div></div>
+    <div><div class="bidlabel">Intent to work (sign / date)</div><div class="bidfield"></div></div>
+  </div>
+</div>`;
+  })
+  .join("")}`;
   return documentShell(title, body);
 }
 
