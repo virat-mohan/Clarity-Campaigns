@@ -84,7 +84,7 @@ export function PodDisplay({
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {roleOptions.map((r) => (
-                          <SelectItem key={r.name} value={r.name}>{r.name} — ${r.rate}/hr</SelectItem>
+                          <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

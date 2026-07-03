@@ -21,7 +21,7 @@
   --destructive: #c2513a;
   --destructive-foreground: #ffffff;
   --ring: #e9941a;
-  --radius: 0.25rem;
+  --radius: 0.375rem;
 }
 
 @theme inline {
@@ -47,7 +47,7 @@
   --color-ring: var(--ring);
   --radius-DEFAULT: var(--radius);
   --font-heading: var(--font-space-grotesk);
-  --font-sans: var(--font-ibm-plex-sans);
+  --font-sans: var(--font-plus-jakarta-sans);
   --font-mono: var(--font-ibm-plex-mono);
 }
 
@@ -65,9 +65,9 @@ body {
 }
 
 .font-mono-label {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 

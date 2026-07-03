@@ -2,13 +2,13 @@
 
 import { useAdminStore } from "@/lib/store/admin-store";
 import { ASSET_TYPES, SkuId } from "@/lib/data/campaign-types";
-import { VendorToggleState, CustomVendorLine } from "@/lib/store/campaign-store";
+import { VendorToggleState, CustomVendorLine, InfluencerEntry } from "@/lib/store/campaign-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserPlus } from "lucide-react";
 
 function mediumFor(assetType: string): string | undefined {
   return ASSET_TYPES.find((a) => a.type === assetType)?.medium;
@@ -23,6 +23,10 @@ export function VendorTogglePanel({
   onAddCustomVendor,
   onUpdateCustomVendor,
   onRemoveCustomVendor,
+  influencers,
+  onAddInfluencer,
+  onUpdateInfluencer,
+  onRemoveInfluencer,
 }: {
   sku: SkuId;
   assetTypes: string[];
@@ -32,6 +36,10 @@ export function VendorTogglePanel({
   onAddCustomVendor: () => void;
   onUpdateCustomVendor: (id: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
   onRemoveCustomVendor: (id: string) => void;
+  influencers: InfluencerEntry[];
+  onAddInfluencer: () => void;
+  onUpdateInfluencer: (id: string, partial: Partial<Omit<InfluencerEntry, "id">>) => void;
+  onRemoveInfluencer: (id: string) => void;
 }) {
   const vendors = useAdminStore((s) => s.vendors);
   const hasVideoAsset = assetTypes.some((t) => mediumFor(t) === "Video");
@@ -41,66 +49,139 @@ export function VendorTogglePanel({
   const visibleVendors = scopedVendors.filter((v) => {
     if (v.mediaType === "video") return hasVideoAsset;
     if (v.mediaType === "image") return hasImageAsset;
-    // influencer and other always shown
     return true;
   });
   const gatedCount = scopedVendors.length - visibleVendors.length;
 
   return (
-    <div>
-      <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">
-        Vendor & specialist capacity — toggle on to add
-      </div>
-      {gatedCount > 0 && (
-        <p className="mb-3 text-[11px] text-muted-foreground-2">
-          {gatedCount} vendor{gatedCount > 1 ? "s" : ""} hidden until a matching video or design asset is
-          added to the brief.
-        </p>
-      )}
-      <div className="flex flex-col gap-2">
-        {visibleVendors.map((v) => {
-          const state = vendorToggles[v.id] ?? { on: false, cost: v.price };
-          return (
-            <Card key={v.id}>
-              <CardContent className="pt-3 pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="font-heading text-[13px] font-semibold">{v.name}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground-2">
-                      {v.specialistArea} · {v.mediaType}
+    <div className="flex flex-col gap-6">
+      {/* Admin-managed vendors */}
+      <div>
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          Vendor & specialist capacity
+        </div>
+        {gatedCount > 0 && (
+          <p className="mb-3 text-[11px] text-muted-foreground-2">
+            {gatedCount} vendor{gatedCount > 1 ? "s" : ""} hidden until a matching video or design asset is
+            added to the brief.
+          </p>
+        )}
+        <div className="flex flex-col gap-2">
+          {visibleVendors.map((v) => {
+            const state = vendorToggles[v.id] ?? { on: false, cost: v.price };
+            return (
+              <Card key={v.id} className={state.on ? "border-primary/30" : ""}>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[13px] font-semibold">{v.name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {v.specialistArea} · {v.mediaType}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {state.on && (
+                        <div className="w-32">
+                          <Label className="mb-0.5 text-[11px]">{v.currency === "INR" ? "Cost (₹)" : "Cost ($)"}</Label>
+                          <Input
+                            type="number"
+                            placeholder="TBD"
+                            value={state.cost ?? ""}
+                            onChange={(e) =>
+                              onToggle(v.id, {
+                                on: true,
+                                cost: e.target.value === "" ? null : Number(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={state.on}
+                          onCheckedChange={(checked) => onToggle(v.id, { on: checked, cost: state.cost })}
+                        />
+                        {state.on && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => onToggle(v.id, { on: false, cost: state.cost })}
+                            title="Remove"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-32">
-                      <Label className="mb-0.5">{v.currency === "INR" ? "Cost (₹)" : "Cost ($)"}</Label>
-                      <Input
-                        type="number"
-                        placeholder="TBD"
-                        value={state.cost ?? ""}
-                        disabled={!state.on}
-                        onChange={(e) =>
-                          onToggle(v.id, {
-                            on: state.on,
-                            cost: e.target.value === "" ? null : Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <Switch
-                      checked={state.on}
-                      onCheckedChange={(checked) => onToggle(v.id, { on: checked, cost: state.cost })}
+                </CardContent>
+              </Card>
+            );
+          })}
+          {visibleVendors.length === 0 && (
+            <p className="text-[12px] text-muted-foreground">No vendors available for this campaign type.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Influencers */}
+      <div>
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          Influencers / UGC creators
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Add named influencers or UGC creators with their agreed fee. These are billed at cost alongside ad spend.
+        </p>
+        <div className="flex flex-col gap-2">
+          {influencers.map((inf) => (
+            <Card key={inf.id}>
+              <CardContent className="pt-3 pb-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[160px]">
+                    <Label className="mb-0.5 text-[11px]">Name</Label>
+                    <Input
+                      placeholder="e.g. @username or Creator name"
+                      value={inf.name}
+                      onChange={(e) => onUpdateInfluencer(inf.id, { name: e.target.value })}
                     />
                   </div>
+                  <div className="w-32">
+                    <Label className="mb-0.5 text-[11px]">Fee ($)</Label>
+                    <Input
+                      type="number"
+                      placeholder="TBD"
+                      value={inf.cost ?? ""}
+                      onChange={(e) =>
+                        onUpdateInfluencer(inf.id, {
+                          cost: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-end mb-0.5"
+                    onClick={() => onRemoveInfluencer(inf.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
+          ))}
+        </div>
+        <Button variant="outline" size="sm" className="mt-2 gap-1.5" onClick={onAddInfluencer}>
+          <UserPlus className="h-3.5 w-3.5" />
+          Add influencer
+        </Button>
       </div>
 
-      <div className="mt-5">
-        <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">
-          Any other vendor or specialist
+      {/* Custom vendors */}
+      <div>
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          Other vendors / specialists
         </div>
         <div className="flex flex-col gap-2">
           {customVendors.map((v) => (
@@ -108,7 +189,7 @@ export function VendorTogglePanel({
               <CardContent className="pt-3 pb-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex-1 min-w-[160px]">
-                    <Label className="mb-0.5">Name</Label>
+                    <Label className="mb-0.5 text-[11px]">Name</Label>
                     <Input
                       placeholder="e.g. Local translator, PR agency"
                       value={v.name}
@@ -116,15 +197,24 @@ export function VendorTogglePanel({
                     />
                   </div>
                   <div className="w-32">
-                    <Label className="mb-0.5">Cost ($/project)</Label>
+                    <Label className="mb-0.5 text-[11px]">Cost ($/project)</Label>
                     <Input
                       type="number"
                       placeholder="TBD"
                       value={v.cost ?? ""}
-                      onChange={(e) => onUpdateCustomVendor(v.id, { cost: e.target.value === "" ? null : Number(e.target.value) })}
+                      onChange={(e) =>
+                        onUpdateCustomVendor(v.id, {
+                          cost: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
                     />
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => onRemoveCustomVendor(v.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-end mb-0.5"
+                    onClick={() => onRemoveCustomVendor(v.id)}
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>

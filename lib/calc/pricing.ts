@@ -68,6 +68,7 @@ export interface VendorLine {
   name: string;
   cost: number;
   currency: "USD" | "INR";
+  type?: "influencer";
 }
 
 export type PriceMode = "fixed" | "hybrid";

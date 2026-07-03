@@ -27,8 +27,15 @@ export interface CustomVendorLine {
   cost: number | null;
 }
 
+export interface InfluencerEntry {
+  id: string;
+  name: string;
+  cost: number | null;
+}
+
 export interface CampaignConfig {
   client: string;
+  clientSpoc: string;
   name: string;
   objective: string;
   goal: string;
@@ -55,6 +62,7 @@ export interface CampaignConfig {
   risks: string;
   vendorToggles: Record<string, VendorToggleState>;
   customVendors: CustomVendorLine[];
+  influencers: InfluencerEntry[];
   podOverrides: Record<number, { role: string; hours: number; rate: number }>;
   podAssignments: Record<number, string>;
   timelineApproved: boolean;
@@ -64,6 +72,8 @@ export interface CampaignConfig {
   outcomeRate: number;
   outcomeDeltaRate: number;
   outcomeDeltaThreshold: number;
+  markupFixedOverride: number | null;
+  markupHybridOverride: number | null;
 }
 
 export type CampaignStatus = "draft" | "proposal-sent" | "active" | "reporting" | "completed";
@@ -95,6 +105,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
   const benchmark = industryFunnelBenchmark(defaultIndustry, ct.channels);
   return {
     client: "",
+    clientSpoc: "",
     name: "",
     objective: "Lead Generation",
     goal: "",
@@ -121,6 +132,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     risks: "",
     vendorToggles: {},
     customVendors: [],
+    influencers: [],
     podOverrides: {},
     podAssignments: {},
     timelineApproved: false,
@@ -130,6 +142,8 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     outcomeRate: 0,
     outcomeDeltaRate: 0,
     outcomeDeltaThreshold: 10,
+    markupFixedOverride: null,
+    markupHybridOverride: null,
   };
 }
 
@@ -175,6 +189,9 @@ interface CampaignStoreState {
   addCustomVendor: (id: string) => void;
   updateCustomVendor: (id: string, vendorId: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
   removeCustomVendor: (id: string, vendorId: string) => void;
+  addInfluencer: (id: string) => void;
+  updateInfluencer: (id: string, influencerId: string, partial: Partial<Omit<InfluencerEntry, "id">>) => void;
+  removeInfluencer: (id: string, influencerId: string) => void;
   approveTimeline: (id: string) => void;
   setLastOrder: (order: OrderRecord) => void;
 }
@@ -307,6 +324,30 @@ export const useCampaignStore = create<CampaignStoreState>()(
         set((s) => ({
           campaigns: withConfig(s.campaigns, id, (c) => ({
             customVendors: c.customVendors.filter((v) => v.id !== vendorId),
+          })),
+        })),
+
+      addInfluencer: (id) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            influencers: [
+              ...(c.influencers ?? []),
+              { id: `inf-${Date.now()}-${Math.round(Math.random() * 1000)}`, name: "", cost: null },
+            ],
+          })),
+        })),
+
+      updateInfluencer: (id, influencerId, partial) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            influencers: (c.influencers ?? []).map((v) => (v.id === influencerId ? { ...v, ...partial } : v)),
+          })),
+        })),
+
+      removeInfluencer: (id, influencerId) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            influencers: (c.influencers ?? []).filter((v) => v.id !== influencerId),
           })),
         })),
 

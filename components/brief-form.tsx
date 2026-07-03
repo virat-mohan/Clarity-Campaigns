@@ -306,10 +306,18 @@ export function BriefForm({
       </Section>
 
       <Section title="Delivery">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label>Owner</Label>
+            <Label>Delivery owner</Label>
             <Input value={config.owner} onChange={(e) => onChange({ owner: e.target.value })} />
+          </div>
+          <div>
+            <Label>Client SPOC</Label>
+            <Input
+              value={config.clientSpoc ?? ""}
+              placeholder="Client's single point of contact"
+              onChange={(e) => onChange({ clientSpoc: e.target.value })}
+            />
           </div>
         </div>
         <p className="mt-2 text-[11px] text-[#6a7280]">

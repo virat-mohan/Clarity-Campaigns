@@ -57,6 +57,9 @@ export default function BuildWizardPage() {
   const addCustomVendor = useCampaignStore((s) => s.addCustomVendor);
   const updateCustomVendor = useCampaignStore((s) => s.updateCustomVendor);
   const removeCustomVendor = useCampaignStore((s) => s.removeCustomVendor);
+  const addInfluencer = useCampaignStore((s) => s.addInfluencer);
+  const updateInfluencer = useCampaignStore((s) => s.updateInfluencer);
+  const removeInfluencer = useCampaignStore((s) => s.removeInfluencer);
   const approveTimeline = useCampaignStore((s) => s.approveTimeline);
   const setStatus = useCampaignStore((s) => s.setStatus);
   const updateActuals = useCampaignStore((s) => s.updateActuals);
@@ -98,7 +101,7 @@ export default function BuildWizardPage() {
   );
 
   const vendorLines = useMemo(
-    () => (config ? vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors) : []),
+    () => (config ? vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors, config.influencers) : []),
     [config, adminVendors]
   );
   const pricing = useMemo(() => {
@@ -245,6 +248,10 @@ export default function BuildWizardPage() {
               onAddCustomVendor={() => addCustomVendor(campaignId)}
               onUpdateCustomVendor={(id, partial) => updateCustomVendor(campaignId, id, partial)}
               onRemoveCustomVendor={(id) => removeCustomVendor(campaignId, id)}
+              influencers={cfg.influencers ?? []}
+              onAddInfluencer={() => addInfluencer(campaignId)}
+              onUpdateInfluencer={(influencerId, partial) => updateInfluencer(campaignId, influencerId, partial)}
+              onRemoveInfluencer={(influencerId) => removeInfluencer(campaignId, influencerId)}
             />
             {sprintBreakdown && (
               <div>

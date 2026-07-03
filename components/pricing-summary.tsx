@@ -22,7 +22,8 @@ function outcomeMetricLabel(metric: OutcomeMetric, customLabel: string): string 
 export function vendorLinesFor(
   vendorToggles: Record<string, VendorToggleState>,
   customVendors: CustomVendorLine[] = [],
-  adminVendors: AdminVendor[] = []
+  adminVendors: AdminVendor[] = [],
+  influencers: { id: string; name: string; cost: number | null }[] = []
 ): VendorLine[] {
   const rosterLines = adminVendors
     .map((v) => ({ entry: v, state: vendorToggles[v.id] }))
@@ -32,11 +33,15 @@ export function vendorLinesFor(
       name: entry.name,
       cost: state.cost ?? 0,
       currency: entry.currency,
+      type: entry.mediaType === "influencer" ? ("influencer" as const) : undefined,
     }));
   const customLines = customVendors
     .filter((v) => v.name.trim().length > 0)
     .map((v) => ({ id: v.id, name: v.name, cost: v.cost ?? 0, currency: "USD" as const }));
-  return [...rosterLines, ...customLines];
+  const influencerLines = influencers
+    .filter((inf) => inf.name.trim().length > 0)
+    .map((inf) => ({ id: inf.id, name: inf.name, cost: inf.cost ?? 0, currency: "USD" as const, type: "influencer" as const }));
+  return [...rosterLines, ...customLines, ...influencerLines];
 }
 
 export function PricingSummary({
@@ -51,8 +56,12 @@ export function PricingSummary({
   onChange: (partial: Partial<CampaignConfig>) => void;
 }) {
   const adminVendors = useAdminStore((s) => s.vendors);
-  const markupFixed = useAdminStore((s) => s.markupFixed);
-  const markupHybrid = useAdminStore((s) => s.markupHybrid);
+  const adminMarkupFixed = useAdminStore((s) => s.markupFixed);
+  const adminMarkupHybrid = useAdminStore((s) => s.markupHybrid);
+
+  // Per-campaign overrides fall back to admin defaults
+  const markupFixed = config.markupFixedOverride ?? adminMarkupFixed;
+  const markupHybrid = config.markupHybridOverride ?? adminMarkupHybrid;
 
   const outcomeTarget = outcomeTargetFor(config.outcomeMetric, {
     audienceSize: config.audienceSize,
@@ -61,7 +70,7 @@ export function PricingSummary({
     closePct: config.closePct,
     asp: config.asp,
   });
-  const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors);
+  const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors, config.influencers ?? []);
 
   const pricing = computePricing({
     sku,
@@ -86,12 +95,8 @@ export function PricingSummary({
 
   const metricLabel = outcomeMetricLabel(config.outcomeMetric, config.outcomeCustomLabel);
 
-  const influencerLines = vendorLines.filter(
-    (v) => adminVendors.find((a) => a.id === v.id)?.mediaType === "influencer" && v.currency === "USD"
-  );
-  const otherVendorLinesUsd = vendorLines.filter(
-    (v) => adminVendors.find((a) => a.id === v.id)?.mediaType !== "influencer" && v.currency === "USD"
-  );
+  const influencerLines = vendorLines.filter((v) => v.type === "influencer" && v.currency === "USD");
+  const otherVendorLinesUsd = vendorLines.filter((v) => v.type !== "influencer" && v.currency === "USD");
   const specialistLinesInr = vendorLines.filter((v) => v.currency === "INR");
   const influencerCost = influencerLines.reduce((s, v) => s + v.cost, 0);
   const otherVendorCostUsd = otherVendorLinesUsd.reduce((s, v) => s + v.cost, 0);
@@ -104,14 +109,14 @@ export function PricingSummary({
 
   return (
     <div>
-      {/* Pricing mode toggle */}
+      {/* Pricing mode toggle + per-campaign markup override */}
       <div className="mb-4 flex gap-2">
         {(["fixed", "hybrid"] as PriceMode[]).map((mode) => (
           <button
             key={mode}
             onClick={() => onChange({ priceMode: mode })}
             className={cn(
-              "flex-1 rounded-[3px] border px-4 py-2 font-mono text-[11px] uppercase transition-colors",
+              "flex-1 rounded-[4px] border px-4 py-2.5 text-[12px] font-medium transition-colors",
               config.priceMode === mode
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border-strong text-muted-foreground hover:border-primary/50"
@@ -122,6 +127,32 @@ export function PricingSummary({
               : `Fixed + Variable (${markupHybrid}× base)`}
           </button>
         ))}
+      </div>
+      <div className="mb-4 flex items-end gap-3">
+        <div className="w-36">
+          <Label className="text-[11px]">
+            {config.priceMode === "fixed" ? "Fixed markup" : "Base markup"} override
+          </Label>
+          <Input
+            type="number"
+            step={0.5}
+            min={1}
+            max={20}
+            placeholder={String(config.priceMode === "fixed" ? adminMarkupFixed : adminMarkupHybrid)}
+            value={config.priceMode === "fixed"
+              ? (config.markupFixedOverride ?? "")
+              : (config.markupHybridOverride ?? "")}
+            onChange={(e) => {
+              const v = e.target.value === "" ? null : Number(e.target.value);
+              onChange(config.priceMode === "fixed"
+                ? { markupFixedOverride: v }
+                : { markupHybridOverride: v });
+            }}
+          />
+        </div>
+        <p className="text-[11px] text-muted-foreground pb-1.5">
+          Leave blank to use admin default ({config.priceMode === "fixed" ? adminMarkupFixed : adminMarkupHybrid}×)
+        </p>
       </div>
 
       {/* Hybrid variable payout config */}
