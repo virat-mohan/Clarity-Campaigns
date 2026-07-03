@@ -4,7 +4,7 @@ import { SkuId } from "@/lib/data/campaign-types";
 import { CampaignConfig, VendorToggleState, CustomVendorLine } from "@/lib/store/campaign-store";
 import { PodRow } from "@/lib/calc/staffing";
 import { computePricing, outcomeTargetFor, PriceMode, OutcomeMetric, VendorLine } from "@/lib/calc/pricing";
-import { ALL_ROSTER, currencyForRoster } from "@/lib/data/talent-vendor-roster";
+import { AdminVendor, useAdminStore } from "@/lib/store/admin-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,16 +20,17 @@ function outcomeMetricLabel(metric: OutcomeMetric, customLabel: string): string 
 
 export function vendorLinesFor(
   vendorToggles: Record<string, VendorToggleState>,
-  customVendors: CustomVendorLine[] = []
+  customVendors: CustomVendorLine[] = [],
+  adminVendors: AdminVendor[] = []
 ): VendorLine[] {
-  const rosterLines = ALL_ROSTER.filter((r) => r.togglable)
-    .map((r) => ({ entry: r, state: vendorToggles[r.id] }))
-    .filter((x): x is { entry: (typeof ALL_ROSTER)[number]; state: VendorToggleState } => !!x.state?.on)
+  const rosterLines = adminVendors
+    .map((v) => ({ entry: v, state: vendorToggles[v.id] }))
+    .filter((x): x is { entry: AdminVendor; state: VendorToggleState } => !!x.state?.on)
     .map(({ entry, state }) => ({
       id: entry.id,
       name: entry.name,
       cost: state.cost ?? 0,
-      currency: currencyForRoster(entry),
+      currency: entry.currency,
     }));
   const customLines = customVendors
     .filter((v) => v.name.trim().length > 0)
@@ -55,7 +56,8 @@ export function PricingSummary({
     closePct: config.closePct,
     asp: config.asp,
   });
-  const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors);
+  const adminVendors = useAdminStore((s) => s.vendors);
+  const vendorLines = vendorLinesFor(config.vendorToggles, config.customVendors, adminVendors);
 
   const pricing = computePricing({
     sku,

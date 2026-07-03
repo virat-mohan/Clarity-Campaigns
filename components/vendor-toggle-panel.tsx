@@ -1,7 +1,7 @@
 "use client";
 
-import { RETAINER_ROSTER, VENDOR_ROSTER, RosterEntry } from "@/lib/data/talent-vendor-roster";
-import { VIDEO_ASSET_TYPES } from "@/lib/data/campaign-types";
+import { useAdminStore } from "@/lib/store/admin-store";
+import { ASSET_TYPES, SkuId } from "@/lib/data/campaign-types";
 import { VendorToggleState, CustomVendorLine } from "@/lib/store/campaign-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -10,9 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
-const VIDEO_VENDOR_IDS = new Set(["ai-video-studio", "film-director", "photographer"]);
+function mediumFor(assetType: string): string | undefined {
+  return ASSET_TYPES.find((a) => a.type === assetType)?.medium;
+}
 
 export function VendorTogglePanel({
+  sku,
   assetTypes,
   vendorToggles,
   onToggle,
@@ -21,6 +24,7 @@ export function VendorTogglePanel({
   onUpdateCustomVendor,
   onRemoveCustomVendor,
 }: {
+  sku: SkuId;
   assetTypes: string[];
   vendorToggles: Record<string, VendorToggleState>;
   onToggle: (vendorId: string, state: VendorToggleState) => void;
@@ -29,26 +33,32 @@ export function VendorTogglePanel({
   onUpdateCustomVendor: (id: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
   onRemoveCustomVendor: (id: string) => void;
 }) {
-  const hasVideoAsset = assetTypes.some((t) => VIDEO_ASSET_TYPES.has(t));
-  const visibleVendors: RosterEntry[] = [
-    ...RETAINER_ROSTER,
-    ...VENDOR_ROSTER.filter((v) => !VIDEO_VENDOR_IDS.has(v.id) || hasVideoAsset),
-  ];
+  const vendors = useAdminStore((s) => s.vendors);
+  const hasVideoAsset = assetTypes.some((t) => mediumFor(t) === "Video");
+  const hasImageAsset = assetTypes.some((t) => mediumFor(t) === "Design");
+
+  const scopedVendors = vendors.filter((v) => v.skuScope.length === 0 || v.skuScope.includes(sku));
+  const visibleVendors = scopedVendors.filter((v) => {
+    if (v.mediaType === "video") return hasVideoAsset;
+    if (v.mediaType === "image") return hasImageAsset;
+    return true;
+  });
+  const gatedCount = scopedVendors.length - visibleVendors.length;
 
   return (
     <div>
       <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">
         Vendor & specialist capacity — toggle on to add
       </div>
-      {!hasVideoAsset && (
+      {gatedCount > 0 && (
         <p className="mb-3 text-[11px] text-muted-foreground-2">
-          AI Video Generation, Film Director, and Photographer unlock once a Reel or video asset is
+          {gatedCount} vendor{gatedCount > 1 ? "s" : ""} hidden until a matching video or design asset is
           added to the brief.
         </p>
       )}
       <div className="flex flex-col gap-2">
         {visibleVendors.map((v) => {
-          const state = vendorToggles[v.id] ?? { on: false, cost: v.rate };
+          const state = vendorToggles[v.id] ?? { on: false, cost: v.price };
           return (
             <Card key={v.id}>
               <CardContent className="pt-3 pb-3">
@@ -56,12 +66,12 @@ export function VendorTogglePanel({
                   <div>
                     <div className="font-heading text-[13px] font-semibold">{v.name}</div>
                     <div className="font-mono text-[10px] text-muted-foreground-2">
-                      {v.dept} · {v.engagementType.replace("-", " ")} · {v.source}
+                      {v.specialistArea} · {v.mediaType}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-32">
-                      <Label className="mb-0.5">{v.rateUnit.startsWith("₹") ? "Cost (₹)" : "Cost ($)"}</Label>
+                      <Label className="mb-0.5">{v.currency === "INR" ? "Cost (₹)" : "Cost ($)"}</Label>
                       <Input
                         type="number"
                         placeholder="TBD"

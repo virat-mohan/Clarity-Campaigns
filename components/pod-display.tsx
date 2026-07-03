@@ -2,25 +2,35 @@
 
 import { PodRow, rateForRole } from "@/lib/calc/staffing";
 import { ROLE_LIBRARY } from "@/lib/data/role-library";
+import { useAdminStore } from "@/lib/store/admin-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { fmtMoney } from "@/lib/utils";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, User } from "lucide-react";
+
+const UNASSIGNED = "__unassigned__";
 
 export function PodDisplay({
   pod,
   suggested,
+  assignments,
   onChange,
   onReset,
+  onAssign,
+  onClearAssign,
 }: {
   pod: PodRow[];
   suggested: PodRow[];
+  assignments: Record<number, string>;
   onChange: (stepNumber: number, override: { role: string; hours: number; rate: number }) => void;
   onReset: (stepNumber: number) => void;
+  onAssign: (stepNumber: number, freelancerId: string) => void;
+  onClearAssign: (stepNumber: number) => void;
 }) {
+  const freelancers = useAdminStore((s) => s.freelancers);
   const totalHours = pod.reduce((s, r) => s + r.hours, 0);
   const totalCost = pod.reduce((s, r) => s + r.hours * r.rate, 0);
 
@@ -44,14 +54,25 @@ export function PodDisplay({
           const roleOptions = ROLE_LIBRARY.some((r) => r.name === row.role)
             ? ROLE_LIBRARY
             : [{ name: row.role, dept: "Marketing" as const, level: "Shared", rate: row.rate }, ...ROLE_LIBRARY];
+
+          const assignedId = assignments[row.stepNumber];
+          const assignedFreelancer = freelancers.find((f) => f.id === assignedId);
+          const matching = freelancers.filter((f) => f.role === row.role);
+          const others = freelancers.filter((f) => f.role !== row.role);
+
           return (
             <Card key={row.stepNumber}>
               <CardContent className="pt-4 pb-4">
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-primary font-mono text-[9px] font-semibold text-primary-foreground">
                     {row.stepNumber}
                   </span>
                   <span className="font-heading text-[13px] font-semibold">{row.stepTitle}</span>
+                  {assignedFreelancer && (
+                    <span className="flex items-center gap-1 font-mono text-[10.5px] text-secondary">
+                      <User className="h-3 w-3" /> {assignedFreelancer.name}
+                    </span>
+                  )}
                 </div>
                 <div className="ml-7 mb-2 flex flex-wrap items-end gap-3">
                   <div className="w-56">
@@ -87,6 +108,24 @@ export function PodDisplay({
                   <div className="font-mono text-[11px] text-muted-foreground pb-2">
                     = {fmtMoney(row.hours * row.rate)}
                   </div>
+                </div>
+                <div className="ml-7 mb-2 w-64">
+                  <Label className="mb-0.5">Assigned freelancer</Label>
+                  <Select
+                    value={assignedId ?? UNASSIGNED}
+                    onValueChange={(v) => (v === UNASSIGNED ? onClearAssign(row.stepNumber) : onAssign(row.stepNumber, v))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                      {matching.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.name} — {f.role}</SelectItem>
+                      ))}
+                      {others.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.name} — {f.role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {isOverridden && (
                   <div className="ml-7 mb-2">

@@ -66,6 +66,9 @@ export interface CampaignConfig {
   // standards pre-fill the pod; these overrides are set only when a user
   // edits a value (including swapping which role is staffed on a step).
   podOverrides: Record<number, { role: string; hours: number; rate: number }>;
+  // Named freelancer pulled onto a pod step, keyed by PROCS step number ->
+  // freelancer id (from the admin store). Absent = unassigned.
+  podAssignments: Record<number, string>;
   // Timeline
   timelineApproved: boolean;
   // Pricing
@@ -121,6 +124,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     vendorToggles: {},
     customVendors: [],
     podOverrides: {},
+    podAssignments: {},
     timelineApproved: false,
     priceMode: "fixed",
     outcomeMetric: "opportunity",
@@ -150,6 +154,8 @@ interface CampaignStoreState {
   setVendorToggle: (sku: SkuId, vendorId: string, state: VendorToggleState) => void;
   setPodOverride: (sku: SkuId, stepNumber: number, override: { role: string; hours: number; rate: number }) => void;
   resetPodOverride: (sku: SkuId, stepNumber: number) => void;
+  setPodAssignment: (sku: SkuId, stepNumber: number, freelancerId: string) => void;
+  clearPodAssignment: (sku: SkuId, stepNumber: number) => void;
   addCustomVendor: (sku: SkuId) => void;
   updateCustomVendor: (sku: SkuId, id: string, partial: Partial<Omit<CustomVendorLine, "id">>) => void;
   removeCustomVendor: (sku: SkuId, id: string) => void;
@@ -201,6 +207,23 @@ export const useCampaignStore = create<CampaignStoreState>()(
           const nextOverrides = { ...current.podOverrides };
           delete nextOverrides[stepNumber];
           return { configs: { ...state.configs, [sku]: { ...current, podOverrides: nextOverrides } } };
+        }),
+      setPodAssignment: (sku, stepNumber, freelancerId) =>
+        set((state) => {
+          const current = state.configs[sku] ?? defaultConfig(sku);
+          return {
+            configs: {
+              ...state.configs,
+              [sku]: { ...current, podAssignments: { ...current.podAssignments, [stepNumber]: freelancerId } },
+            },
+          };
+        }),
+      clearPodAssignment: (sku, stepNumber) =>
+        set((state) => {
+          const current = state.configs[sku] ?? defaultConfig(sku);
+          const next = { ...current.podAssignments };
+          delete next[stepNumber];
+          return { configs: { ...state.configs, [sku]: { ...current, podAssignments: next } } };
         }),
       addCustomVendor: (sku) =>
         set((state) => {

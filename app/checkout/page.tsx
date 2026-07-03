@@ -4,6 +4,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CAMPAIGN_TYPES, SkuId } from "@/lib/data/campaign-types";
 import { useCampaignStore } from "@/lib/store/campaign-store";
+import { useAdminStore } from "@/lib/store/admin-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
 import { computePricing, outcomeTargetFor } from "@/lib/calc/pricing";
@@ -27,6 +28,7 @@ function CheckoutContent() {
   const ct = sku ? CAMPAIGN_TYPES[sku] : null;
   const config = useCampaignStore((s) => (sku ? s.getConfig(sku) : null));
   const setLastOrder = useCampaignStore((s) => s.setLastOrder);
+  const adminVendors = useAdminStore((s) => s.vendors);
 
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -49,7 +51,7 @@ function CheckoutContent() {
 
   const cfg = config;
   const skuId = sku;
-  const vendorLines = vendorLinesFor(cfg.vendorToggles, cfg.customVendors);
+  const vendorLines = vendorLinesFor(cfg.vendorToggles, cfg.customVendors, adminVendors);
   const outcomeTarget = outcomeTargetFor(cfg.outcomeMetric, {
     audienceSize: cfg.audienceSize,
     qualifiedPct: cfg.qualifiedPct,
