@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #e7e4db;
+  --card: #121212;
+  --card-foreground: #e7e4db;
+  --border: #262626;
+  --border-strong: #333333;
+  --paper: #f4f0e7;
+  --paper-border: #d5cfc0;
+  --paper-foreground: #1b2129;
+  --muted: #1a1a1a;
+  --muted-foreground: #7a8a97;
+  --muted-foreground-2: #4e5f6c;
+  --primary: #ffb627;
+  --primary-hover: #e9941a;
+  --primary-foreground: #0e141b;
+  --secondary: #6fb6a3;
+  --secondary-foreground: #0e141b;
+  --destructive: #e2725b;
+  --destructive-foreground: #0e141b;
+  --ring: #ffb627;
+  --radius: 0.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-paper: var(--paper);
+  --color-paper-border: var(--paper-border);
+  --color-paper-foreground: var(--paper-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted-foreground-2: var(--muted-foreground-2);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --radius-DEFAULT: var(--radius);
+  --font-heading: var(--font-space-grotesk);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-heading {
+  font-family: var(--font-heading), ui-sans-serif, sans-serif;
+}
+
+.font-mono-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
