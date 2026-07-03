@@ -1,4 +1,6 @@
 // Ported from ClarityHQ Master Campaign Builder (CT).
+import type { IndustryId } from "./industry-benchmarks";
+
 export type SkuId = "abm" | "social" | "content" | "performance" | "retention";
 
 export type FlywheelStage = "Acquisition" | "Conversion" | "Retention";
@@ -10,6 +12,11 @@ export interface CampaignType {
   desc: string;
   channels: string[];
   flywheelStage: FlywheelStage;
+  // Editorial guidance on what kind of business this motion fits — not a
+  // numeric benchmark, just marketing judgment referencing the industries
+  // already modelled in industry-benchmarks.ts.
+  fitRationale: string;
+  bestFitIndustries: IndustryId[];
 }
 
 // Flywheel stage is a manual editorial mapping (Acquisition / Conversion / Retention),
@@ -22,6 +29,9 @@ export const CAMPAIGN_TYPES: Record<SkuId, CampaignType> = {
     desc: "Multi-touch outbound via email, LinkedIn, and WhatsApp on a fixed account book.",
     channels: ["Email", "LinkedIn", "WhatsApp"],
     flywheelStage: "Conversion",
+    fitRationale:
+      "High-value, longer sales-cycle businesses, where a well-researched, personal conversation with a named account outperforms broad reach.",
+    bestFitIndustries: ["realestate", "finance", "saas"],
   },
   social: {
     id: "social",
@@ -30,6 +40,9 @@ export const CAMPAIGN_TYPES: Record<SkuId, CampaignType> = {
     desc: "Platform-native content strategy across owned channels.",
     channels: ["Instagram", "LinkedIn", "X / Twitter", "YouTube"],
     flywheelStage: "Acquisition",
+    fitRationale:
+      "Brands built on visual identity, taste, or community, where consistent presence compounds into demand over time.",
+    bestFitIndustries: ["d2c", "fnb", "health"],
   },
   content: {
     id: "content",
@@ -38,6 +51,9 @@ export const CAMPAIGN_TYPES: Record<SkuId, CampaignType> = {
     desc: "Ranking on search and AI answer engines through authoritative content.",
     channels: ["SEO / AEO", "Blog", "LinkedIn"],
     flywheelStage: "Acquisition",
+    fitRationale:
+      "Considered-purchase categories where buyers research extensively before deciding, and being the trusted answer wins the deal.",
+    bestFitIndustries: ["saas", "finance", "edu"],
   },
   performance: {
     id: "performance",
@@ -46,6 +62,9 @@ export const CAMPAIGN_TYPES: Record<SkuId, CampaignType> = {
     desc: "Paid media on Meta and Google with creatives and weekly optimisation.",
     channels: ["Meta Ads", "Google Ads", "Instagram"],
     flywheelStage: "Conversion",
+    fitRationale:
+      "Businesses with a clear, trackable conversion event, where paid spend can be tuned toward a target cost-per-lead or ROAS.",
+    bestFitIndustries: ["d2c", "fmcg", "realestate"],
   },
   retention: {
     id: "retention",
@@ -54,6 +73,9 @@ export const CAMPAIGN_TYPES: Record<SkuId, CampaignType> = {
     desc: "Behavioural email and WhatsApp flows for existing customers.",
     channels: ["Email", "WhatsApp"],
     flywheelStage: "Retention",
+    fitRationale:
+      "Businesses that live on repeat behaviour — repurchase, renewal, or continued engagement — rather than one-time acquisition.",
+    bestFitIndustries: ["d2c", "fnb", "finance"],
   },
 };
 
