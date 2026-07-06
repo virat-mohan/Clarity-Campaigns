@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CampaignConfig } from "@/lib/store/campaign-store";
+import { useAdminStore } from "@/lib/store/admin-store";
 import { SkuId } from "@/lib/data/campaign-types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface BriefImportProps {
 }
 
 export function BriefImport({ sku, onFill }: BriefImportProps) {
+  const anthropicApiKey = useAdminStore((s) => s.anthropicApiKey);
   const [open, setOpen] = useState(true);
   const [briefText, setBriefText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ export function BriefImport({ sku, onFill }: BriefImportProps) {
       const res = await fetch("/api/parse-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ briefText, sku }),
+        body: JSON.stringify({ briefText, sku, apiKey: anthropicApiKey }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
-
 const OBJECTIVES = [
   "Lead Generation",
   "Awareness",
@@ -78,11 +76,24 @@ Rules:
 
 export async function POST(req: NextRequest) {
   try {
-    const { briefText, sku } = await req.json();
+    const { briefText, sku, apiKey } = await req.json();
 
     if (!briefText || typeof briefText !== "string" || briefText.trim().length < 10) {
       return NextResponse.json({ error: "Brief text is too short." }, { status: 400 });
     }
+
+    const resolvedKey = (typeof apiKey === "string" && apiKey.trim())
+      ? apiKey.trim()
+      : process.env.ANTHROPIC_API_KEY ?? "";
+
+    if (!resolvedKey) {
+      return NextResponse.json(
+        { error: "No Anthropic API key configured. Add it in Admin → Settings." },
+        { status: 401 }
+      );
+    }
+
+    const client = new Anthropic({ apiKey: resolvedKey });
 
     const userMessage = sku
       ? `Campaign type: ${sku}\n\nBrief:\n${briefText}`

@@ -44,6 +44,8 @@ export default function AdminPage() {
   const markupHybrid = useAdminStore((s) => s.markupHybrid);
   const setMarkupFixed = useAdminStore((s) => s.setMarkupFixed);
   const setMarkupHybrid = useAdminStore((s) => s.setMarkupHybrid);
+  const anthropicApiKey = useAdminStore((s) => s.anthropicApiKey);
+  const setAnthropicApiKey = useAdminStore((s) => s.setAnthropicApiKey);
 
   const campaigns = useCampaignStore((s) => s.campaigns);
   const clientProfile = useClientStore((s) => s.profile);
@@ -519,8 +521,29 @@ export default function AdminPage() {
           </p>
 
           <div className="max-w-lg flex flex-col gap-6">
-            <Card>
-              <CardContent className="pt-5">
+            <Card className="bg-paper border-paper-border">
+              <CardContent className="pt-5 text-paper-foreground">
+                <div className="font-mono-label text-[9.5px] text-primary mb-1">Anthropic API key</div>
+                <p className="text-[11px] text-muted-foreground-2 mb-3">
+                  Used server-side to parse campaign briefs. Stored in your browser only — never committed or sent anywhere else.
+                  Get a key at <span className="font-medium text-foreground">console.anthropic.com</span>.
+                </p>
+                <Label>API key</Label>
+                <Input
+                  type="password"
+                  placeholder="sk-ant-api03-..."
+                  value={anthropicApiKey}
+                  onChange={(e) => setAnthropicApiKey(e.target.value)}
+                  className="font-mono mt-1"
+                />
+                {anthropicApiKey && (
+                  <p className="mt-2 text-[11px] text-secondary">Key saved — brief parsing will use this key.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-paper border-paper-border">
+              <CardContent className="pt-5 text-paper-foreground">
                 <div className="font-mono-label text-[9.5px] text-primary mb-4">Markup multipliers</div>
 
                 <div className="flex flex-col gap-5">
