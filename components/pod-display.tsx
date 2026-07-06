@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PodRow, rateForRole } from "@/lib/calc/staffing";
 import { ROLE_LIBRARY } from "@/lib/data/role-library";
 import { useAdminStore } from "@/lib/store/admin-store";
@@ -12,6 +13,8 @@ import { fmtMoney } from "@/lib/utils";
 import { RotateCcw, User } from "lucide-react";
 
 const UNASSIGNED = "__unassigned__";
+const OTHER = "__other__";
+const CUSTOM_PREFIX = "__custom__:";
 
 export function PodDisplay({
   pod,
@@ -31,6 +34,7 @@ export function PodDisplay({
   onClearAssign: (stepNumber: number) => void;
 }) {
   const freelancers = useAdminStore((s) => s.freelancers);
+  const [customNames, setCustomNames] = useState<Record<number, string>>({});
   const totalHours = pod.reduce((s, r) => s + r.hours, 0);
   const totalCost = pod.reduce((s, r) => s + r.hours * r.rate, 0);
 
@@ -56,21 +60,26 @@ export function PodDisplay({
             : [{ name: row.role, dept: "Marketing" as const, level: "Shared", rate: row.rate }, ...ROLE_LIBRARY];
 
           const assignedId = assignments[row.stepNumber];
-          const assignedFreelancer = freelancers.find((f) => f.id === assignedId);
+          const isCustom = assignedId?.startsWith(CUSTOM_PREFIX);
+          const customName = isCustom ? assignedId.slice(CUSTOM_PREFIX.length) : undefined;
+          const assignedFreelancer = !isCustom ? freelancers.find((f) => f.id === assignedId) : undefined;
           const matching = freelancers.filter((f) => f.role === row.role);
           const others = freelancers.filter((f) => f.role !== row.role);
 
+          // The select value: custom assignments show as OTHER sentinel
+          const selectValue = isCustom ? OTHER : (assignedId ?? UNASSIGNED);
+
           return (
-            <Card key={row.stepNumber}>
-              <CardContent className="pt-4 pb-4">
+            <Card key={row.stepNumber} className="bg-paper border-paper-border">
+              <CardContent className="pt-4 pb-4 text-paper-foreground">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-primary font-mono text-[9px] font-semibold text-primary-foreground">
                     {row.stepNumber}
                   </span>
                   <span className="font-heading text-[13px] font-semibold">{row.stepTitle}</span>
-                  {assignedFreelancer && (
+                  {(assignedFreelancer || customName) && (
                     <span className="flex items-center gap-1 font-mono text-[10.5px] text-secondary">
-                      <User className="h-3 w-3" /> {assignedFreelancer.name}
+                      <User className="h-3 w-3" /> {assignedFreelancer ? assignedFreelancer.name : customName}
                     </span>
                   )}
                 </div>
@@ -112,8 +121,19 @@ export function PodDisplay({
                 <div className="ml-7 mb-2 w-64">
                   <Label className="mb-0.5">Assigned freelancer</Label>
                   <Select
-                    value={assignedId ?? UNASSIGNED}
-                    onValueChange={(v) => (v === UNASSIGNED ? onClearAssign(row.stepNumber) : onAssign(row.stepNumber, v))}
+                    value={selectValue}
+                    onValueChange={(v) => {
+                      if (v === UNASSIGNED) {
+                        onClearAssign(row.stepNumber);
+                        setCustomNames((prev) => { const n = { ...prev }; delete n[row.stepNumber]; return n; });
+                      } else if (v === OTHER) {
+                        setCustomNames((prev) => ({ ...prev, [row.stepNumber]: customNames[row.stepNumber] ?? "" }));
+                        onAssign(row.stepNumber, CUSTOM_PREFIX + (customNames[row.stepNumber] ?? ""));
+                      } else {
+                        setCustomNames((prev) => { const n = { ...prev }; delete n[row.stepNumber]; return n; });
+                        onAssign(row.stepNumber, v);
+                      }
+                    }}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -124,8 +144,20 @@ export function PodDisplay({
                       {others.map((f) => (
                         <SelectItem key={f.id} value={f.id}>{f.name} — {f.role}</SelectItem>
                       ))}
+                      <SelectItem value={OTHER}>Other (enter name)…</SelectItem>
                     </SelectContent>
                   </Select>
+                  {(selectValue === OTHER || isCustom) && (
+                    <Input
+                      className="mt-1.5"
+                      placeholder="Name"
+                      value={customNames[row.stepNumber] ?? customName ?? ""}
+                      onChange={(e) => {
+                        setCustomNames((prev) => ({ ...prev, [row.stepNumber]: e.target.value }));
+                        onAssign(row.stepNumber, CUSTOM_PREFIX + e.target.value);
+                      }}
+                    />
+                  )}
                 </div>
                 {isOverridden && (
                   <div className="ml-7 mb-2">

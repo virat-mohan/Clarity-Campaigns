@@ -67,6 +67,7 @@ export default function BuildWizardPage() {
 
   const adminVendors = useAdminStore((s) => s.vendors);
   const adminPodTemplates = useAdminStore((s) => s.podTemplates);
+  const adminPodTemplatesCO = useAdminStore((s) => s.podTemplatesCreativeOnly);
   const markupFixed = useAdminStore((s) => s.markupFixed);
   const markupHybrid = useAdminStore((s) => s.markupHybrid);
 
@@ -77,7 +78,9 @@ export default function BuildWizardPage() {
   const config = campaign?.config ?? null;
   const sku = campaign?.sku ?? null;
   const ct = sku ? CAMPAIGN_TYPES[sku] : null;
-  const templateSteps = sku ? adminPodTemplates[sku] : undefined;
+  const templateSteps = sku
+    ? (config?.creativesOnly ? adminPodTemplatesCO[sku] : adminPodTemplates[sku])
+    : undefined;
 
   const brand = useCampaignStore((s) => s.brand);
   useEffect(() => {

@@ -40,6 +40,12 @@ export default function AdminPage() {
   const removeTemplateStep = useAdminStore((s) => s.removeTemplateStep);
   const toggleTemplateStep = useAdminStore((s) => s.toggleTemplateStep);
 
+  const podTemplatesCreativeOnly = useAdminStore((s) => s.podTemplatesCreativeOnly);
+  const addTemplateStepCO = useAdminStore((s) => s.addTemplateStepCO);
+  const updateTemplateStepCO = useAdminStore((s) => s.updateTemplateStepCO);
+  const removeTemplateStepCO = useAdminStore((s) => s.removeTemplateStepCO);
+  const toggleTemplateStepCO = useAdminStore((s) => s.toggleTemplateStepCO);
+
   const markupFixed = useAdminStore((s) => s.markupFixed);
   const markupHybrid = useAdminStore((s) => s.markupHybrid);
   const setMarkupFixed = useAdminStore((s) => s.setMarkupFixed);
@@ -53,6 +59,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState("freelancers");
   const [biddingCampaignId, setBiddingCampaignId] = useState<string>("");
   const [templateSku, setTemplateSku] = useState<SkuId>("abm");
+  const [templateMode, setTemplateMode] = useState<"fullservice" | "creativesonly">("fullservice");
 
   // Bidding — resolve campaign from new store
   const biddingCampaign = campaigns.find((c) => c.id === biddingCampaignId) ?? campaigns[0] ?? null;
@@ -75,10 +82,15 @@ export default function AdminPage() {
     [biddingSku, biddingConfig, biddingTemplateSteps]
   );
 
-  const templateSteps = useMemo(
-    () => [...(podTemplates[templateSku] ?? [])].sort((a, b) => a.stepNumber - b.stepNumber),
-    [podTemplates, templateSku]
-  );
+  const templateSteps = useMemo(() => {
+    const source = templateMode === "creativesonly" ? podTemplatesCreativeOnly : podTemplates;
+    return [...(source[templateSku] ?? [])].sort((a, b) => a.stepNumber - b.stepNumber);
+  }, [podTemplates, podTemplatesCreativeOnly, templateSku, templateMode]);
+
+  const tplAdd = templateMode === "creativesonly" ? addTemplateStepCO : addTemplateStep;
+  const tplUpdate = templateMode === "creativesonly" ? updateTemplateStepCO : updateTemplateStep;
+  const tplRemove = templateMode === "creativesonly" ? removeTemplateStepCO : removeTemplateStep;
+  const tplToggle = templateMode === "creativesonly" ? toggleTemplateStepCO : toggleTemplateStep;
 
   function handleExportBidding() {
     if (!biddingConfig || !biddingSprintBreakdown) return;
@@ -291,16 +303,49 @@ export default function AdminPage() {
           <Card className="mb-5 bg-paper border-paper-border">
             <CardContent className="pt-5 pb-4">
               <div className="font-mono-label text-[9.5px] text-primary-hover mb-3">Select campaign type</div>
-              <div className="w-64">
-                <Select value={templateSku} onValueChange={(v) => setTemplateSku(v as SkuId)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CAMPAIGN_TYPE_LIST.map((ct) => (
-                      <SelectItem key={ct.id} value={ct.id}>{ct.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="w-64">
+                  <Select value={templateSku} onValueChange={(v) => setTemplateSku(v as SkuId)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CAMPAIGN_TYPE_LIST.map((ct) => (
+                        <SelectItem key={ct.id} value={ct.id}>{ct.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex rounded-[4px] border border-paper-border overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateMode("fullservice")}
+                    className={cn(
+                      "px-3 py-1.5 text-[11px] font-mono transition-colors",
+                      templateMode === "fullservice"
+                        ? "bg-paper-foreground text-paper"
+                        : "bg-transparent text-muted-foreground hover:bg-paper-border"
+                    )}
+                  >
+                    Full Service
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTemplateMode("creativesonly")}
+                    className={cn(
+                      "px-3 py-1.5 text-[11px] font-mono transition-colors border-l border-paper-border",
+                      templateMode === "creativesonly"
+                        ? "bg-paper-foreground text-paper"
+                        : "bg-transparent text-muted-foreground hover:bg-paper-border"
+                    )}
+                  >
+                    Creatives Only
+                  </button>
+                </div>
               </div>
+              {templateMode === "creativesonly" && (
+                <p className="mt-2 text-[11px] text-[#6a7280]">
+                  Creatives-only template: planning &amp; production steps only. Client runs execution, monitoring, and reporting.
+                </p>
+              )}
               <p className="mt-2 text-[11px] text-muted-foreground">
                 {templateSteps.filter((s) => s.active).length} active step
                 {templateSteps.filter((s) => s.active).length !== 1 ? "s" : ""} ·{" "}
@@ -320,7 +365,7 @@ export default function AdminPage() {
                       </span>
                       <Switch
                         checked={step.active}
-                        onCheckedChange={() => toggleTemplateStep(templateSku, step.id)}
+                        onCheckedChange={() => tplToggle(templateSku, step.id)}
                       />
                     </div>
                     <div className="w-14">
@@ -329,7 +374,7 @@ export default function AdminPage() {
                         type="number"
                         value={step.stepNumber}
                         onChange={(e) =>
-                          updateTemplateStep(templateSku, step.id, {
+                          tplUpdate(templateSku, step.id, {
                             stepNumber: Number(e.target.value) || 1,
                           })
                         }
@@ -339,7 +384,7 @@ export default function AdminPage() {
                       <Label>Title</Label>
                       <Input
                         value={step.title}
-                        onChange={(e) => updateTemplateStep(templateSku, step.id, { title: e.target.value })}
+                        onChange={(e) => tplUpdate(templateSku, step.id, { title: e.target.value })}
                       />
                     </div>
                     <div className="flex-1 min-w-[160px]">
@@ -347,7 +392,7 @@ export default function AdminPage() {
                       <Input
                         list="role-library-options-tpl"
                         value={step.role}
-                        onChange={(e) => updateTemplateStep(templateSku, step.id, { role: e.target.value })}
+                        onChange={(e) => tplUpdate(templateSku, step.id, { role: e.target.value })}
                       />
                     </div>
                     <div className="w-20">
@@ -356,7 +401,7 @@ export default function AdminPage() {
                         type="number"
                         value={step.hours}
                         onChange={(e) =>
-                          updateTemplateStep(templateSku, step.id, {
+                          tplUpdate(templateSku, step.id, {
                             hours: Number(e.target.value) || 0,
                           })
                         }
@@ -368,7 +413,7 @@ export default function AdminPage() {
                         type="number"
                         value={step.rate}
                         onChange={(e) =>
-                          updateTemplateStep(templateSku, step.id, {
+                          tplUpdate(templateSku, step.id, {
                             rate: Number(e.target.value) || 0,
                           })
                         }
@@ -380,7 +425,7 @@ export default function AdminPage() {
                         type="number"
                         value={step.days}
                         onChange={(e) =>
-                          updateTemplateStep(templateSku, step.id, {
+                          tplUpdate(templateSku, step.id, {
                             days: Number(e.target.value) || 0,
                           })
                         }
@@ -389,7 +434,7 @@ export default function AdminPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeTemplateStep(templateSku, step.id)}
+                      onClick={() => tplRemove(templateSku, step.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -400,7 +445,7 @@ export default function AdminPage() {
                       value={step.deliverable}
                       placeholder="What this step produces for the client"
                       onChange={(e) =>
-                        updateTemplateStep(templateSku, step.id, { deliverable: e.target.value })
+                        tplUpdate(templateSku, step.id, { deliverable: e.target.value })
                       }
                     />
                   </div>
@@ -417,7 +462,7 @@ export default function AdminPage() {
             variant="outline"
             size="sm"
             className="mt-3"
-            onClick={() => addTemplateStep(templateSku)}
+            onClick={() => tplAdd(templateSku)}
           >
             + Add step
           </Button>
