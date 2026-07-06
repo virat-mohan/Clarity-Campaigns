@@ -6,6 +6,15 @@ import { SkuId, CAMPAIGN_TYPES } from "../data/campaign-types";
 import type { OutcomeMetric, PriceMode } from "../calc/pricing";
 import { industryFunnelBenchmark } from "../calc/reach";
 
+export interface ExtraPodStep {
+  id: string;
+  stepTitle: string;
+  role: string;
+  hours: number;
+  rate: number;
+  out: string;
+}
+
 export interface BrandContext {
   brandBookName: string;
   salesDataName: string;
@@ -76,6 +85,9 @@ export interface CampaignConfig {
   markupFixedOverride: number | null;
   markupHybridOverride: number | null;
   creativesOnly: boolean;
+  podExcluded: number[];
+  podExtraSteps: ExtraPodStep[];
+  costsApproved: boolean;
 }
 
 export type CampaignStatus = "draft" | "proposal-sent" | "active" | "reporting" | "completed";
@@ -147,6 +159,9 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     markupFixedOverride: null,
     markupHybridOverride: null,
     creativesOnly: false,
+    podExcluded: [],
+    podExtraSteps: [],
+    costsApproved: false,
   };
 }
 
@@ -196,6 +211,12 @@ interface CampaignStoreState {
   updateInfluencer: (id: string, influencerId: string, partial: Partial<Omit<InfluencerEntry, "id">>) => void;
   removeInfluencer: (id: string, influencerId: string) => void;
   approveTimeline: (id: string) => void;
+  excludePodStep: (id: string, stepNumber: number) => void;
+  includePodStep: (id: string, stepNumber: number) => void;
+  addPodExtraStep: (id: string) => void;
+  updatePodExtraStep: (id: string, extraId: string, partial: Partial<Omit<ExtraPodStep, "id">>) => void;
+  removePodExtraStep: (id: string, extraId: string) => void;
+  approveCosts: (id: string) => void;
   setLastOrder: (order: OrderRecord) => void;
 }
 
@@ -357,6 +378,49 @@ export const useCampaignStore = create<CampaignStoreState>()(
       approveTimeline: (id) =>
         set((s) => ({
           campaigns: withConfig(s.campaigns, id, () => ({ timelineApproved: true })),
+        })),
+
+      excludePodStep: (id, stepNumber) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podExcluded: [...(c.podExcluded ?? []).filter((n) => n !== stepNumber), stepNumber],
+          })),
+        })),
+
+      includePodStep: (id, stepNumber) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podExcluded: (c.podExcluded ?? []).filter((n) => n !== stepNumber),
+          })),
+        })),
+
+      addPodExtraStep: (id) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podExtraSteps: [
+              ...(c.podExtraSteps ?? []),
+              { id: `extra-${Date.now()}-${Math.round(Math.random() * 1000)}`, stepTitle: "", role: "", hours: 8, rate: 25, out: "" },
+            ],
+          })),
+        })),
+
+      updatePodExtraStep: (id, extraId, partial) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podExtraSteps: (c.podExtraSteps ?? []).map((e) => (e.id === extraId ? { ...e, ...partial } : e)),
+          })),
+        })),
+
+      removePodExtraStep: (id, extraId) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, (c) => ({
+            podExtraSteps: (c.podExtraSteps ?? []).filter((e) => e.id !== extraId),
+          })),
+        })),
+
+      approveCosts: (id) =>
+        set((s) => ({
+          campaigns: withConfig(s.campaigns, id, () => ({ costsApproved: true })),
         })),
 
       setLastOrder: (order) => set({ lastOrder: order }),

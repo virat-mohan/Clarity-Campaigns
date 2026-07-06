@@ -59,7 +59,8 @@ export function ResultsProjection({
       <div>
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label>Ad spend ($/mo) — same figure used in Pricing</Label>
+            <Label>Ad spend ($/mo)</Label>
+            <p className="text-[10.5px] text-muted-foreground mb-1">Same figure carried into Pricing — change here or in the Brief.</p>
             <Input
               type="number"
               value={config.adSpend}
@@ -99,9 +100,10 @@ export function ResultsProjection({
             <p className="text-[11.5px] text-muted-foreground">
               Funnel benchmark: Qualified {result.qualifiedPct}%, Opportunity {result.opportunityPct}%, Close {result.closurePct}% — indexed per channel from platform benchmarks, and now driving the Funnel &amp; Commercial fields in the Brief.
             </p>
-            <div className="mt-4">
+            <div className="mt-4 max-w-[220px]">
               <Label>ASP / Deal value ($)</Label>
-              <Input type="number" className="max-w-[200px]" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} />
+              <p className="text-[10.5px] text-muted-foreground mb-1">Average sale price per closed deal.</p>
+              <Input type="number" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} />
             </div>
             <div className="mt-3 flex flex-wrap gap-3">
               <Stat

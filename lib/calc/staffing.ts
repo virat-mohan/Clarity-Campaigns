@@ -9,6 +9,7 @@ export interface PodRow {
   hours: number;
   rate: number;
   out: string; // the specific deliverable text for this role's step, from PROCS
+  extraId?: string; // set only for user-added extra steps; absent for template/PROCS steps
 }
 
 // Minimal shape required from admin template steps — avoids importing "use client" admin-store.

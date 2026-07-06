@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CAMPAIGN_TYPES } from "@/lib/data/campaign-types";
-import { useCampaignStore, CampaignStatus } from "@/lib/store/campaign-store";
+import { useCampaignStore, CampaignStatus, ExtraPodStep } from "@/lib/store/campaign-store";
 import { useAdminStore } from "@/lib/store/admin-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
@@ -13,6 +13,7 @@ import { StepIndicator } from "@/components/step-indicator";
 import { BriefImport } from "@/components/brief-import";
 import { BriefForm } from "@/components/brief-form";
 import { PodDisplay } from "@/components/pod-display";
+import { CostSignoff } from "@/components/cost-signoff";
 import { VendorTogglePanel } from "@/components/vendor-toggle-panel";
 import { Timeline } from "@/components/timeline";
 import { ResultsProjection } from "@/components/results-projection";
@@ -29,6 +30,7 @@ import { Download, CheckCircle2, Circle } from "lucide-react";
 const SUB_STEPS = [
   { key: "brief", label: "Brief & Team" },
   { key: "vendors", label: "Vendors & Timeline" },
+  { key: "costsignoff", label: "Cost Sign-off" },
   { key: "results", label: "Expected Results" },
   { key: "pricing", label: "Pricing" },
   { key: "reporting", label: "Reporting" },
@@ -62,6 +64,12 @@ export default function BuildWizardPage() {
   const updateInfluencer = useCampaignStore((s) => s.updateInfluencer);
   const removeInfluencer = useCampaignStore((s) => s.removeInfluencer);
   const approveTimeline = useCampaignStore((s) => s.approveTimeline);
+  const excludePodStep = useCampaignStore((s) => s.excludePodStep);
+  const includePodStep = useCampaignStore((s) => s.includePodStep);
+  const addPodExtraStep = useCampaignStore((s) => s.addPodExtraStep);
+  const updatePodExtraStep = useCampaignStore((s) => s.updatePodExtraStep);
+  const removePodExtraStep = useCampaignStore((s) => s.removePodExtraStep);
+  const approveCosts = useCampaignStore((s) => s.approveCosts);
   const setStatus = useCampaignStore((s) => s.setStatus);
   const updateActuals = useCampaignStore((s) => s.updateActuals);
 
@@ -104,9 +112,31 @@ export default function BuildWizardPage() {
         : [],
     [ct, sku, config?.audienceSize, config?.creativesOnly, templateSteps]
   );
+
+  // suggestedPodFiltered: exclude steps the user has removed
+  const suggestedPodFiltered = useMemo(
+    () => suggestedPod.filter((r) => !(config?.podExcluded ?? []).includes(r.stepNumber)),
+    [suggestedPod, config?.podExcluded]
+  );
+
+  // Extra rows from user-added steps
+  const extraPodRows = useMemo(
+    () =>
+      (config?.podExtraSteps ?? []).map((e, i): import("@/lib/calc/staffing").PodRow => ({
+        stepNumber: 1000 + i,
+        stepTitle: e.stepTitle,
+        role: e.role,
+        hours: e.hours,
+        rate: e.rate,
+        out: e.out,
+        extraId: e.id,
+      })),
+    [config?.podExtraSteps]
+  );
+
   const pod = useMemo(
-    () => applyPodOverrides(suggestedPod, config?.podOverrides ?? {}),
-    [suggestedPod, config?.podOverrides]
+    () => [...applyPodOverrides(suggestedPodFiltered, config?.podOverrides ?? {}), ...extraPodRows],
+    [suggestedPodFiltered, config?.podOverrides, extraPodRows]
   );
   const sprintBreakdown = useMemo(
     () => (ct && sku ? buildSprintBreakdown(sku, config?.sprints ?? 1, templateSteps) : null),
@@ -181,6 +211,7 @@ export default function BuildWizardPage() {
     { label: "ICP defined", ok: cfg.icp.trim().length > 0 },
     { label: "At least one asset added", ok: cfg.assets.length > 0 },
     { label: "Timeline approved", ok: cfg.timelineApproved },
+    { label: "Costs signed off", ok: cfg.costsApproved ?? false },
     ...(cfg.priceMode === "hybrid" ? [{ label: "Outcome rate set", ok: cfg.outcomeRate > 0 }] : []),
   ];
   const allChecked = checks.every((c) => c.ok);
@@ -220,12 +251,18 @@ export default function BuildWizardPage() {
             <BriefForm ct={ct} config={cfg} onChange={(p) => updateConfig(campaignId, p)} />
             <PodDisplay
               pod={pod}
-              suggested={suggestedPod}
+              suggested={suggestedPodFiltered}
               assignments={cfg.podAssignments}
+              podExcluded={cfg.podExcluded ?? []}
+              podExtraSteps={cfg.podExtraSteps ?? []}
               onChange={(stepNumber, override) => setPodOverride(campaignId, stepNumber, override)}
               onReset={(stepNumber) => resetPodOverride(campaignId, stepNumber)}
               onAssign={(stepNumber, freelancerId) => setPodAssignment(campaignId, stepNumber, freelancerId)}
               onClearAssign={(stepNumber) => clearPodAssignment(campaignId, stepNumber)}
+              onRemoveTemplateStep={(stepNumber) => excludePodStep(campaignId, stepNumber)}
+              onAddExtraStep={() => addPodExtraStep(campaignId)}
+              onUpdateExtraStep={(extraId, partial) => updatePodExtraStep(campaignId, extraId, partial)}
+              onRemoveExtraStep={(extraId) => removePodExtraStep(campaignId, extraId)}
             />
           </div>
         )}
@@ -283,15 +320,43 @@ export default function BuildWizardPage() {
         )}
 
         {stepIndex === 2 && (
-          <ResultsProjection sku={sku} config={cfg} onChange={(p) => updateConfig(campaignId, p)} />
+          <CostSignoff
+            pod={pod}
+            suggestedPod={suggestedPodFiltered}
+            vendorLines={vendorLines}
+            config={cfg}
+            costsApproved={cfg.costsApproved ?? false}
+            onTogglePodStep={(stepNumber, excluded) =>
+              excluded
+                ? excludePodStep(campaignId, stepNumber)
+                : includePodStep(campaignId, stepNumber)
+            }
+            onChangePodRow={(stepNumber, override) => setPodOverride(campaignId, stepNumber, override)}
+            onResetPodRow={(stepNumber) => resetPodOverride(campaignId, stepNumber)}
+            onAddExtraStep={() => addPodExtraStep(campaignId)}
+            onUpdateExtraStep={(extraId, partial) => updatePodExtraStep(campaignId, extraId, partial)}
+            onRemoveExtraStep={(extraId) => removePodExtraStep(campaignId, extraId)}
+            onApproveCosts={() => { approveCosts(campaignId); goNext(); }}
+          />
         )}
 
         {stepIndex === 3 && (
+          <ResultsProjection sku={sku} config={cfg} onChange={(p) => updateConfig(campaignId, p)} />
+        )}
+
+        {stepIndex === 4 && (
           <div className="flex flex-col gap-4">
             {!cfg.timelineApproved && (
               <Card className="border-destructive/40">
                 <CardContent className="pt-4 text-[12.5px] text-destructive">
                   Timeline has not been approved yet. Go back to Vendors &amp; Timeline and approve it before finalizing pricing.
+                </CardContent>
+              </Card>
+            )}
+            {!cfg.costsApproved && (
+              <Card className="border-amber-400/40 bg-amber-50/40">
+                <CardContent className="pt-4 text-[12.5px] text-amber-800">
+                  Costs have not been signed off yet. Go back to Cost Sign-off and approve the budget first.
                 </CardContent>
               </Card>
             )}
@@ -321,7 +386,7 @@ export default function BuildWizardPage() {
           </div>
         )}
 
-        {stepIndex === 4 && (
+        {stepIndex === 5 && (
           <div className="flex flex-col gap-4">
             <Card className="bg-paper border-paper-border">
               <CardContent className="pt-5">
@@ -384,9 +449,12 @@ export default function BuildWizardPage() {
         <Button variant="outline" onClick={goBack} disabled={stepIndex === 0}>Back</Button>
         <TalkToUsCta variant="inline" />
         {stepIndex < SUB_STEPS.length - 1 ? (
-          stepIndex === 3 ? (
+          stepIndex === 2 ? (
+            // Cost sign-off step — Next button hidden; the "Approve costs" button advances
+            null
+          ) : stepIndex === 4 ? (
             <Button
-              disabled={!cfg.timelineApproved}
+              disabled={!cfg.timelineApproved || !cfg.costsApproved}
               onClick={() => router.push(`/checkout?id=${campaignId}`)}
             >
               Proceed to checkout

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PodRow, rateForRole } from "@/lib/calc/staffing";
+import { ExtraPodStep } from "@/lib/store/campaign-store";
 import { ROLE_LIBRARY } from "@/lib/data/role-library";
 import { useAdminStore } from "@/lib/store/admin-store";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { fmtMoney } from "@/lib/utils";
-import { RotateCcw, User } from "lucide-react";
+import { RotateCcw, User, Trash2 } from "lucide-react";
 
 const UNASSIGNED = "__unassigned__";
 const OTHER = "__other__";
@@ -20,21 +21,36 @@ export function PodDisplay({
   pod,
   suggested,
   assignments,
+  podExcluded,
+  podExtraSteps,
   onChange,
   onReset,
   onAssign,
   onClearAssign,
+  onRemoveTemplateStep,
+  onAddExtraStep,
+  onUpdateExtraStep,
+  onRemoveExtraStep,
 }: {
   pod: PodRow[];
   suggested: PodRow[];
   assignments: Record<number, string>;
+  podExcluded?: number[];
+  podExtraSteps?: ExtraPodStep[];
   onChange: (stepNumber: number, override: { role: string; hours: number; rate: number }) => void;
   onReset: (stepNumber: number) => void;
   onAssign: (stepNumber: number, freelancerId: string) => void;
   onClearAssign: (stepNumber: number) => void;
+  onRemoveTemplateStep?: (stepNumber: number) => void;
+  onAddExtraStep?: () => void;
+  onUpdateExtraStep?: (extraId: string, partial: Partial<Omit<ExtraPodStep, "id">>) => void;
+  onRemoveExtraStep?: (extraId: string) => void;
 }) {
   const freelancers = useAdminStore((s) => s.freelancers);
   const [customNames, setCustomNames] = useState<Record<number, string>>({});
+
+  // Template rows only (no extraId) — extra rows rendered separately
+  const templateRows = pod.filter((r) => !r.extraId);
   const totalHours = pod.reduce((s, r) => s + r.hours, 0);
   const totalCost = pod.reduce((s, r) => s + r.hours * r.rate, 0);
 
@@ -44,17 +60,11 @@ export function PodDisplay({
         <div className="font-mono-label text-[9.5px] text-muted-foreground">
           Freelancer pod — role, hours &amp; rate suggested from this campaign&apos;s process standards, editable per step
         </div>
-        <div className="font-mono text-[11px] text-muted-foreground">
-          {totalHours} hrs · {fmtMoney(totalCost)} cost basis
-        </div>
       </div>
       <div className="flex flex-col gap-2">
-        {pod.map((row, i) => {
-          const std = suggested[i];
+        {templateRows.map((row, i) => {
+          const std = suggested[i] ?? row;
           const isOverridden = row.role !== std.role || row.hours !== std.hours || row.rate !== std.rate;
-          // A step's suggested role may be a shared-pool label (e.g. "Creative Pod")
-          // that isn't an exact ROLE_LIBRARY entry — include it so the select always
-          // has a matching option instead of rendering blank.
           const roleOptions = ROLE_LIBRARY.some((r) => r.name === row.role)
             ? ROLE_LIBRARY
             : [{ name: row.role, dept: "Marketing" as const, level: "Shared", rate: row.rate }, ...ROLE_LIBRARY];
@@ -65,8 +75,6 @@ export function PodDisplay({
           const assignedFreelancer = !isCustom ? freelancers.find((f) => f.id === assignedId) : undefined;
           const matching = freelancers.filter((f) => f.role === row.role);
           const others = freelancers.filter((f) => f.role !== row.role);
-
-          // The select value: custom assignments show as OTHER sentinel
           const selectValue = isCustom ? OTHER : (assignedId ?? UNASSIGNED);
 
           return (
@@ -76,11 +84,21 @@ export function PodDisplay({
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-primary font-mono text-[9px] font-semibold text-primary-foreground">
                     {row.stepNumber}
                   </span>
-                  <span className="font-heading text-[13px] font-semibold">{row.stepTitle}</span>
+                  <span className="font-heading text-[13px] font-semibold flex-1">{row.stepTitle}</span>
                   {(assignedFreelancer || customName) && (
                     <span className="flex items-center gap-1 font-mono text-[10.5px] text-secondary">
                       <User className="h-3 w-3" /> {assignedFreelancer ? assignedFreelancer.name : customName}
                     </span>
+                  )}
+                  {onRemoveTemplateStep && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveTemplateStep(row.stepNumber)}
+                      className="ml-auto text-[10.5px] font-mono text-muted-foreground hover:text-destructive transition-colors"
+                      title="Remove step from this campaign"
+                    >
+                      Remove
+                    </button>
                   )}
                 </div>
                 <div className="ml-7 mb-2 flex flex-wrap items-end gap-3">
@@ -173,6 +191,91 @@ export function PodDisplay({
             </Card>
           );
         })}
+
+        {/* Extra steps added by user */}
+        {(podExtraSteps ?? []).map((extra) => (
+          <Card key={extra.id} className="bg-paper border-paper-border border-dashed">
+            <CardContent className="pt-4 pb-4 text-paper-foreground">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">Custom</span>
+                <span className="flex-1 font-heading text-[13px] font-semibold">
+                  {extra.stepTitle || <span className="text-muted-foreground italic">Untitled step</span>}
+                </span>
+                {onRemoveExtraStep && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveExtraStep(extra.id)}
+                    className="text-[10.5px] font-mono text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap items-end gap-3 mb-2">
+                <div className="flex-1 min-w-[160px]">
+                  <Label className="mb-0.5">Step title</Label>
+                  <Input
+                    value={extra.stepTitle}
+                    placeholder="e.g. Brand Strategy Workshop"
+                    onChange={(e) => onUpdateExtraStep?.(extra.id, { stepTitle: e.target.value })}
+                  />
+                </div>
+                <div className="w-44">
+                  <Label className="mb-0.5">Role</Label>
+                  <Input
+                    list="role-options-extra"
+                    value={extra.role}
+                    placeholder="Role"
+                    onChange={(e) => onUpdateExtraStep?.(extra.id, { role: e.target.value })}
+                  />
+                  <datalist id="role-options-extra">
+                    {ROLE_LIBRARY.map((r) => <option key={r.name} value={r.name} />)}
+                  </datalist>
+                </div>
+                <div className="w-24">
+                  <Label className="mb-0.5">Hours</Label>
+                  <Input
+                    type="number"
+                    value={extra.hours}
+                    onChange={(e) => onUpdateExtraStep?.(extra.id, { hours: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="w-24">
+                  <Label className="mb-0.5">Rate ($/hr)</Label>
+                  <Input
+                    type="number"
+                    value={extra.rate}
+                    onChange={(e) => onUpdateExtraStep?.(extra.id, { rate: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="font-mono text-[11px] text-muted-foreground pb-2">
+                  = {fmtMoney(extra.hours * extra.rate)}
+                </div>
+              </div>
+              <div>
+                <Label className="mb-0.5">Deliverable note</Label>
+                <Input
+                  value={extra.out}
+                  placeholder="What this step produces"
+                  onChange={(e) => onUpdateExtraStep?.(extra.id, { out: e.target.value })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Add step + totals */}
+      <div className="mt-3 flex items-center justify-between">
+        {onAddExtraStep ? (
+          <Button variant="outline" size="sm" onClick={onAddExtraStep}>
+            + Add step
+          </Button>
+        ) : <div />}
+        <div className="flex items-center gap-4 text-[12px]">
+          <span className="text-muted-foreground font-mono">{totalHours} hrs total</span>
+          <span className="font-semibold text-paper-foreground font-mono">{fmtMoney(totalCost)} cost basis</span>
+        </div>
       </div>
     </div>
   );
