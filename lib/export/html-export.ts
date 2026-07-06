@@ -95,7 +95,7 @@ function briefSectionsHtml(ct: CampaignType, config: CampaignConfig): string {
     <tr><td>Qualified %</td><td class="num">${config.qualifiedPct}%</td></tr>
     <tr><td>Opportunity %</td><td class="num">${config.opportunityPct}%</td></tr>
     <tr><td>Close %</td><td class="num">${config.closePct}%</td></tr>
-    <tr><td>ASP / Deal value</td><td class="num">${fmtMoney(config.asp)}</td></tr>
+    <tr><td>ASP / Deal value</td><td class="num">${fmtMoney(config.asp)} ${config.aspUnit === "per_month" ? "/ mo" : config.aspUnit === "per_year" ? "/ yr" : "/ unit"}</td></tr>
     <tr><td>Ad spend</td><td class="num">${fmtMoney(config.adSpend)} (${esc(config.adSpendCadence)})</td></tr>
   </table>
 </div>

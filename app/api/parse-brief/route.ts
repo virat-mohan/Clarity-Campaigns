@@ -63,6 +63,7 @@ Return a JSON object with these fields (omit any field you cannot confidently de
 - assets: array of { type: string, qty: number, note?: string } where type is one of ${JSON.stringify(ASSET_TYPES)}
 - adSpend: number — monthly or total ad budget in USD/INR as a number (no currency symbols)
 - asp: number — average deal value or sale price
+- aspUnit: string — one of "per_unit", "per_month", "per_year" — cadence of the ASP (per_unit for one-time sales, per_month for monthly subscriptions, per_year for annual contracts)
 - owner: string — account manager or campaign owner name
 - notes: string — any other relevant details, special requests, or context
 - risks: string — any risks, constraints, or concerns mentioned

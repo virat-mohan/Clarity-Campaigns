@@ -63,6 +63,7 @@ export interface CampaignConfig {
   opportunityPct: number;
   closePct: number;
   asp: number;
+  aspUnit: "per_unit" | "per_month" | "per_year";
   adSpend: number;
   adSpendCadence: "monthly" | "onetime";
   owner: string;
@@ -137,6 +138,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
     opportunityPct: benchmark.opportunityPct,
     closePct: benchmark.closePct,
     asp: 2000,
+    aspUnit: "per_unit",
     adSpend: 0,
     adSpendCadence: "monthly",
     owner: "",

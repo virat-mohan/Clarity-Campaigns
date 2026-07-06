@@ -413,7 +413,7 @@ export function PricingSummary({
                 </div>
               </div>
               <p className="mt-2 text-[10.5px] text-muted-foreground">
-                Based on {fmtMoney(config.asp)} ASP · 40% margin assumption · {fmtMoney(pricing.grandTotal)} grand total
+                Based on {fmtMoney(config.asp)}{config.aspUnit === "per_month" ? "/mo" : config.aspUnit === "per_year" ? "/yr" : ""} ASP · 40% margin assumption · {fmtMoney(pricing.grandTotal)} grand total
               </p>
             </CardContent>
           </Card>

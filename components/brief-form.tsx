@@ -304,7 +304,17 @@ export function BriefForm({
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <Label>ASP / Deal value ($)</Label>
-            <Input type="number" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} />
+            <div className="flex gap-1.5">
+              <Input type="number" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} className="flex-1 min-w-0" />
+              <Select value={config.aspUnit ?? "per_unit"} onValueChange={(v) => onChange({ aspUnit: v as "per_unit" | "per_month" | "per_year" })}>
+                <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="per_unit">per unit</SelectItem>
+                  <SelectItem value="per_month">per month</SelectItem>
+                  <SelectItem value="per_year">per year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div>
             <Label>Ad spend budget ($)</Label>

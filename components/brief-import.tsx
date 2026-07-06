@@ -58,6 +58,7 @@ export function BriefImport({ sku, onFill }: BriefImportProps) {
         );
       if (typeof result.adSpend === "number" && result.adSpend >= 0) safe.adSpend = result.adSpend;
       if (typeof result.asp === "number" && result.asp > 0) safe.asp = result.asp;
+      if (result.aspUnit === "per_month" || result.aspUnit === "per_year" || result.aspUnit === "per_unit") safe.aspUnit = result.aspUnit;
       if (typeof result.owner === "string") safe.owner = result.owner;
       if (typeof result.notes === "string") safe.notes = result.notes;
       if (typeof result.risks === "string") safe.risks = result.risks;

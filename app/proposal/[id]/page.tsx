@@ -249,7 +249,7 @@ export default function ProposalPage() {
           </div>
           {config.asp > 0 && (
             <p className="mt-3 text-[12px] text-muted-foreground">
-              At an average deal size of {fmtMoney(config.asp)}, this campaign targets an estimated pipeline of{" "}
+              At an average deal size of {fmtMoney(config.asp)}{config.aspUnit === "per_month" ? "/mo" : config.aspUnit === "per_year" ? "/yr" : ""}, this campaign targets an estimated pipeline of{" "}
               <strong className="text-foreground">
                 {fmtMoney(
                   Math.round(config.audienceSize * config.qualifiedPct / 100 * config.opportunityPct / 100 * config.closePct / 100) * config.asp

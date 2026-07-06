@@ -8,6 +8,7 @@ import { IndustryId } from "@/lib/data/industry-benchmarks";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { fmtMoney } from "@/lib/utils";
 
 function Stat({ value, label, tone }: { value: string | number; label: string; tone?: "sage" }) {
@@ -100,10 +101,20 @@ export function ResultsProjection({
             <p className="text-[11.5px] text-muted-foreground">
               Funnel benchmark: Qualified {result.qualifiedPct}%, Opportunity {result.opportunityPct}%, Close {result.closurePct}% — indexed per channel from platform benchmarks, and now driving the Funnel &amp; Commercial fields in the Brief.
             </p>
-            <div className="mt-4 max-w-[220px]">
+            <div className="mt-4 max-w-[320px]">
               <Label>ASP / Deal value ($)</Label>
               <p className="text-[10.5px] text-muted-foreground mb-1">Average sale price per closed deal.</p>
-              <Input type="number" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} />
+              <div className="flex gap-1.5">
+                <Input type="number" value={config.asp} onChange={(e) => onChange({ asp: Number(e.target.value) || 0 })} className="flex-1 min-w-0" />
+                <Select value={config.aspUnit ?? "per_unit"} onValueChange={(v) => onChange({ aspUnit: v as "per_unit" | "per_month" | "per_year" })}>
+                  <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per_unit">per unit</SelectItem>
+                    <SelectItem value="per_month">per month</SelectItem>
+                    <SelectItem value="per_year">per year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-3">
               <Stat
@@ -135,7 +146,7 @@ export function ResultsProjection({
             <div className="font-mono-label text-[9.5px] text-muted-foreground mb-2">Revenue potential</div>
             <div className="font-heading text-2xl font-semibold text-secondary">{fmtMoney(funnel.revenuePotential)}</div>
             <p className="mt-1 text-[11.5px] text-muted-foreground">
-              {funnel.audience.toLocaleString()} audience × {config.qualifiedPct}% qualified × {config.opportunityPct}% opportunity × {config.closePct}% close × {fmtMoney(config.asp)} ASP.
+              {funnel.audience.toLocaleString()} audience × {config.qualifiedPct}% qualified × {config.opportunityPct}% opportunity × {config.closePct}% close × {fmtMoney(config.asp)} ASP ({config.aspUnit === "per_month" ? "per month" : config.aspUnit === "per_year" ? "per year" : "per unit"}).
             </p>
             <p className="mt-2 text-[11px] text-muted-foreground-2">
               Qualified/opportunity/close % are suggested from the industry benchmark in the Brief step — edit them there.
