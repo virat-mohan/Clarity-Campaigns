@@ -23,24 +23,26 @@ export function vendorLinesFor(
   vendorToggles: Record<string, VendorToggleState>,
   customVendors: CustomVendorLine[] = [],
   adminVendors: AdminVendor[] = [],
-  influencers: { id: string; name: string; cost: number | null }[] = []
+  influencers: { id: string; name: string; pricePerPost: number | null }[] = []
 ): VendorLine[] {
   const rosterLines = adminVendors
     .map((v) => ({ entry: v, state: vendorToggles[v.id] }))
     .filter((x): x is { entry: AdminVendor; state: VendorToggleState } => !!x.state?.on)
+    // influencer-type vendors are managed in the influencer section, not vendor capacity
+    .filter(({ entry }) => entry.mediaType !== "influencer")
     .map(({ entry, state }) => ({
       id: entry.id,
       name: entry.name,
       cost: state.cost ?? 0,
       currency: entry.currency,
-      type: entry.mediaType === "influencer" ? ("influencer" as const) : undefined,
+      type: undefined,
     }));
   const customLines = customVendors
     .filter((v) => v.name.trim().length > 0)
     .map((v) => ({ id: v.id, name: v.name, cost: v.cost ?? 0, currency: "USD" as const }));
   const influencerLines = influencers
     .filter((inf) => inf.name.trim().length > 0)
-    .map((inf) => ({ id: inf.id, name: inf.name, cost: inf.cost ?? 0, currency: "USD" as const, type: "influencer" as const }));
+    .map((inf) => ({ id: inf.id, name: inf.name, cost: inf.pricePerPost ?? 0, currency: "USD" as const, type: "influencer" as const }));
   return [...rosterLines, ...customLines, ...influencerLines];
 }
 

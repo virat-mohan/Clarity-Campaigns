@@ -30,7 +30,8 @@ export interface CustomVendorLine {
 export interface InfluencerEntry {
   id: string;
   name: string;
-  cost: number | null;
+  pricePerPost: number | null;
+  note: string;
 }
 
 export interface CampaignConfig {
@@ -332,7 +333,7 @@ export const useCampaignStore = create<CampaignStoreState>()(
           campaigns: withConfig(s.campaigns, id, (c) => ({
             influencers: [
               ...(c.influencers ?? []),
-              { id: `inf-${Date.now()}-${Math.round(Math.random() * 1000)}`, name: "", cost: null },
+              { id: `inf-${Date.now()}-${Math.round(Math.random() * 1000)}`, name: "", pricePerPost: null, note: "" },
             ],
           })),
         })),

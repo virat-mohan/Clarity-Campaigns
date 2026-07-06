@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Trash2, UserPlus } from "lucide-react";
 
 function mediumFor(assetType: string): string | undefined {
@@ -45,7 +46,10 @@ export function VendorTogglePanel({
   const hasVideoAsset = assetTypes.some((t) => mediumFor(t) === "Video");
   const hasImageAsset = assetTypes.some((t) => mediumFor(t) === "Design");
 
-  const scopedVendors = vendors.filter((v) => v.skuScope.length === 0 || v.skuScope.includes(sku));
+  // Influencer-type vendors are managed in their own section below
+  const scopedVendors = vendors.filter(
+    (v) => v.mediaType !== "influencer" && (v.skuScope.length === 0 || v.skuScope.includes(sku))
+  );
   const visibleVendors = scopedVendors.filter((v) => {
     if (v.mediaType === "video") return hasVideoAsset;
     if (v.mediaType === "image") return hasImageAsset;
@@ -131,30 +135,30 @@ export function VendorTogglePanel({
           Influencers / UGC creators
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Add named influencers or UGC creators with their agreed fee. These are billed at cost alongside ad spend.
+          Add named influencers or UGC creators. Fee is billed at cost alongside ad spend.
         </p>
         <div className="flex flex-col gap-2">
           {influencers.map((inf) => (
             <Card key={inf.id}>
               <CardContent className="pt-3 pb-3">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <div className="flex-1 min-w-[160px]">
-                    <Label className="mb-0.5 text-[11px]">Name</Label>
+                    <Label className="mb-0.5 text-[11px]">Name / handle</Label>
                     <Input
                       placeholder="e.g. @username or Creator name"
                       value={inf.name}
                       onChange={(e) => onUpdateInfluencer(inf.id, { name: e.target.value })}
                     />
                   </div>
-                  <div className="w-32">
-                    <Label className="mb-0.5 text-[11px]">Fee ($)</Label>
+                  <div className="w-36">
+                    <Label className="mb-0.5 text-[11px]">Price per post ($)</Label>
                     <Input
                       type="number"
                       placeholder="TBD"
-                      value={inf.cost ?? ""}
+                      value={inf.pricePerPost ?? ""}
                       onChange={(e) =>
                         onUpdateInfluencer(inf.id, {
-                          cost: e.target.value === "" ? null : Number(e.target.value),
+                          pricePerPost: e.target.value === "" ? null : Number(e.target.value),
                         })
                       }
                     />
@@ -162,11 +166,21 @@ export function VendorTogglePanel({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="self-end mb-0.5"
+                    className="mt-5 h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
                     onClick={() => onRemoveInfluencer(inf.id)}
+                    title="Remove"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
+                </div>
+                <div className="mt-2">
+                  <Label className="mb-0.5 text-[11px]">Brief / notes</Label>
+                  <Textarea
+                    placeholder="Content brief, usage rights, platform, number of posts…"
+                    className="text-[12px] min-h-[60px]"
+                    value={inf.note}
+                    onChange={(e) => onUpdateInfluencer(inf.id, { note: e.target.value })}
+                  />
                 </div>
               </CardContent>
             </Card>
