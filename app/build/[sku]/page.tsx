@@ -325,20 +325,10 @@ export default function BuildWizardPage() {
         {stepIndex === 2 && (
           <CostSignoff
             pod={pod}
-            suggestedPod={suggestedPodFiltered}
             vendorLines={vendorLines}
+            techCostTotal={pricing?.techCost ?? 0}
             config={cfg}
             costsApproved={cfg.costsApproved ?? false}
-            onTogglePodStep={(stepNumber, excluded) =>
-              excluded
-                ? excludePodStep(campaignId, stepNumber)
-                : includePodStep(campaignId, stepNumber)
-            }
-            onChangePodRow={(stepNumber, override) => setPodOverride(campaignId, stepNumber, override)}
-            onResetPodRow={(stepNumber) => resetPodOverride(campaignId, stepNumber)}
-            onAddExtraStep={() => addPodExtraStep(campaignId)}
-            onUpdateExtraStep={(extraId, partial) => updatePodExtraStep(campaignId, extraId, partial)}
-            onRemoveExtraStep={(extraId) => removePodExtraStep(campaignId, extraId)}
             onApproveCosts={() => { approveCosts(campaignId); goNext(); }}
           />
         )}

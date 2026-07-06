@@ -331,11 +331,11 @@ export function PodDisplay({
         })}
       </div>
 
-      {/* Add step + totals */}
+      {/* Add freelancer + totals */}
       <div className="mt-3 flex items-center justify-between">
         {onAddExtraStep ? (
           <Button variant="outline" size="sm" onClick={onAddExtraStep}>
-            + Add step
+            + Add freelancer to pod
           </Button>
         ) : <div />}
         <div className="flex items-center gap-4 text-[12px]">
