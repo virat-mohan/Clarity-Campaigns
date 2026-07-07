@@ -8,7 +8,8 @@ import { ROLE_LIBRARY } from "@/lib/data/role-library";
 import { useCampaignStore } from "@/lib/store/campaign-store";
 import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
-import { buildFreelancerCallHtml, downloadHtmlFile } from "@/lib/export/html-export";
+import { buildFreelancerCallHtml, downloadHtmlFile, downloadAllClientHtmls } from "@/lib/export/html-export";
+import { downloadCampaignExcel } from "@/lib/export/excel-export";
 import { CampaignStatusBadge } from "@/components/campaign-status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,14 @@ export default function AdminPage() {
     updateVendor(vendorId, { skuScope: next });
   }
 
+  function handleExportExcel() {
+    downloadCampaignExcel(campaigns, clients, podTemplates, podTemplatesCreativeOnly, freelancers);
+  }
+
+  function handleExportClientHtmls() {
+    downloadAllClientHtmls(clients, campaigns, podTemplates, podTemplatesCreativeOnly);
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-6 border-b border-border pb-4">
@@ -135,6 +144,7 @@ export default function AdminPage() {
           <TabsTrigger value="bidding">Freelancer Call for Bids</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
+          <TabsTrigger value="exports">Exports</TabsTrigger>
         </TabsList>
 
         {/* ── Freelancers ── */}
@@ -721,6 +731,71 @@ export default function AdminPage() {
             })}
           </div>
           <Button variant="outline" size="sm" onClick={addClient}>+ Add client</Button>
+        </TabsContent>
+
+        {/* ── Exports ── */}
+        <TabsContent value="exports">
+          <p className="mb-6 text-[12.5px] text-muted-foreground">
+            Download all campaign data in bulk. The Excel export creates one workbook with a summary sheet
+            and one tab per campaign. The client HTMLs generate one standalone HTML file per client, listing
+            all their campaigns with pod and pricing — ready to share.
+          </p>
+
+          {campaigns.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground text-[13px] border border-dashed border-border rounded-[6px]">
+              No campaigns yet.{" "}
+              <Link href="/" className="text-primary underline underline-offset-2">
+                Create one in the marketplace
+              </Link>
+              .
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 max-w-xl">
+              <Card className="bg-paper border-paper-border">
+                <CardContent className="pt-5 pb-5">
+                  <div className="font-mono-label text-[9.5px] text-primary-hover mb-1">Excel workbook</div>
+                  <p className="text-[12.5px] text-muted-foreground mb-3">
+                    Downloads <strong>clarity-campaigns-{new Date().toISOString().slice(0, 10)}.xlsx</strong> with
+                    a Summary sheet and one tab per campaign ({campaigns.length} campaigns).
+                  </p>
+                  <Button onClick={handleExportExcel}>
+                    <Download className="h-3.5 w-3.5 mr-1" />
+                    Export all campaigns — Excel (.xlsx)
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-paper border-paper-border">
+                <CardContent className="pt-5 pb-5">
+                  <div className="font-mono-label text-[9.5px] text-primary-hover mb-1">Client HTML files</div>
+                  <p className="text-[12.5px] text-muted-foreground mb-3">
+                    Downloads one HTML file per client listing all their campaigns, pod, and pricing.
+                    {" "}
+                    {clients.filter((cl) => campaigns.some((c) => c.config.clientId === cl.id)).length} client
+                    {clients.filter((cl) => campaigns.some((c) => c.config.clientId === cl.id)).length !== 1 ? "s" : ""} with campaigns.
+                  </p>
+                  <div className="flex flex-col gap-1.5 mb-4">
+                    {clients
+                      .filter((cl) => campaigns.some((c) => c.config.clientId === cl.id))
+                      .map((cl) => {
+                        const count = campaigns.filter((c) => c.config.clientId === cl.id).length;
+                        return (
+                          <div key={cl.id} className="flex items-center gap-2 text-[12px]">
+                            <ExternalLink className="h-3 w-3 text-muted-foreground flex-none" />
+                            <span className="font-medium">{cl.name}</span>
+                            <span className="text-muted-foreground">— {count} campaign{count !== 1 ? "s" : ""}</span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  <Button variant="outline" onClick={handleExportClientHtmls}>
+                    <Download className="h-3.5 w-3.5 mr-1" />
+                    Export client HTMLs (one per client)
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

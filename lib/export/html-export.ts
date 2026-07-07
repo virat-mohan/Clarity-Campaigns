@@ -1,9 +1,9 @@
-import { CampaignType } from "../data/campaign-types";
-import { CampaignConfig } from "../store/campaign-store";
-import { PodRow } from "../calc/staffing";
+import { CampaignType, CAMPAIGN_TYPES, SkuId } from "../data/campaign-types";
+import { Campaign, CampaignConfig } from "../store/campaign-store";
+import { PodRow, buildAutoPod, applyPodOverrides, podCost } from "../calc/staffing";
 import { SprintBreakdown } from "../calc/sprint";
 import { PricingResult, VendorLine, outcomeTargetFor } from "../calc/pricing";
-import { Freelancer } from "../store/admin-store";
+import { AdminClient, Freelancer, PodTemplateStep } from "../store/admin-store";
 import { fmtMoney, fmtInr } from "../utils";
 
 function esc(value: string | number): string {
@@ -336,4 +336,138 @@ export function downloadHtmlFile(filename: string, html: string): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// Builds a per-client summary HTML covering all campaigns for one client.
+export function buildClientSummaryHtml(
+  client: AdminClient,
+  campaigns: Campaign[],
+  podTemplates: Record<SkuId, PodTemplateStep[]>,
+  podTemplatesCreativeOnly: Record<SkuId, PodTemplateStep[]>,
+): string {
+  if (campaigns.length === 0) return "";
+
+  function getCampaignPod(camp: Campaign): PodRow[] {
+    const tpl = camp.config.creativesOnly
+      ? podTemplatesCreativeOnly[camp.sku]
+      : podTemplates[camp.sku];
+    const ct = CAMPAIGN_TYPES[camp.sku];
+    const suggested = buildAutoPod(
+      camp.sku,
+      camp.config.audienceSize,
+      tpl,
+      ct?.mode === "sales",
+      camp.config.creativesOnly,
+    );
+    const active = suggested.filter((r) => !(camp.config.podExcluded ?? []).includes(r.stepNumber));
+    const withOverrides = applyPodOverrides(active, camp.config.podOverrides ?? {});
+    const extras = (camp.config.podExtraSteps ?? []).map((e, i) => ({
+      stepNumber: 1000 + i,
+      stepTitle: e.stepTitle,
+      role: e.role,
+      hours: e.hours,
+      rate: e.rate,
+      out: e.out,
+    }));
+    return [...withOverrides, ...extras];
+  }
+
+  const title = `${client.name} — Campaign Overview`;
+
+  const campSections = campaigns
+    .map((camp) => {
+      const ct = CAMPAIGN_TYPES[camp.sku];
+      const pod = getCampaignPod(camp);
+      const cost = podCost(pod);
+      const totalHours = pod.reduce((s, r) => s + r.hours, 0);
+
+      return `
+<div style="margin-bottom:36px">
+  <div class="eyebrow">${esc(ct?.label || camp.sku)} · ${esc(camp.config.creativesOnly ? "Creative only" : "Full service")} · ${esc(camp.status)}</div>
+  <h2 style="margin-top:4px">${esc(camp.config.name || "Untitled campaign")}</h2>
+
+  <div class="card">
+    <table>
+      <tr><td>Objective</td><td>${esc(camp.config.objective || "—")}</td></tr>
+      <tr><td>Selling / promoting</td><td>${esc(camp.config.sell || "—")}</td></tr>
+      ${camp.config.goal ? `<tr><td>Goal</td><td>${esc(camp.config.goal)}</td></tr>` : ""}
+      <tr><td>Channels</td><td>${camp.config.channels.map((c) => `<span class="tag">${esc(c)}</span>`).join(" ")}</td></tr>
+      <tr><td>${ct?.mode === "sales" ? "Contact list" : "Audience size"}</td><td>${camp.config.audienceSize.toLocaleString()}</td></tr>
+      <tr><td>Timeline</td><td>${camp.config.weeks} weeks · ${camp.config.sprints} sprints</td></tr>
+      <tr><td>ASP</td><td>${fmtMoney(camp.config.asp)} ${camp.config.aspUnit === "per_month" ? "/ mo" : camp.config.aspUnit === "per_year" ? "/ yr" : "/ unit"}</td></tr>
+      ${camp.config.adSpend ? `<tr><td>Ad spend</td><td>${fmtMoney(camp.config.adSpend)} (${esc(camp.config.adSpendCadence)})</td></tr>` : ""}
+    </table>
+  </div>
+
+  <h2>Pod</h2>
+  <div class="card">
+    <table>
+      <tr>
+        <th>#</th><th>Step</th><th>Role</th><th class="num">Hours</th><th class="num">Rate</th><th class="num">Cost</th>
+      </tr>
+      ${pod
+        .map(
+          (r) =>
+            `<tr>
+              <td style="color:#6a7280">${r.stepNumber}</td>
+              <td>${esc(r.stepTitle)}</td>
+              <td style="color:#6a7280;font-size:12px">${esc(r.role)}</td>
+              <td class="num">${r.hours}</td>
+              <td class="num">${fmtMoney(r.rate)}</td>
+              <td class="num">${fmtMoney(r.hours * r.rate)}</td>
+            </tr>`,
+        )
+        .join("")}
+      <tr style="font-weight:600;border-top:2px solid #e9941a">
+        <td colspan="3">Total</td>
+        <td class="num">${totalHours} hrs</td>
+        <td></td>
+        <td class="num">${fmtMoney(cost)}</td>
+      </tr>
+    </table>
+    <p class="note" style="margin-top:8px">
+      Estimated price (4× markup): <strong>${fmtMoney(cost * 4)}</strong>
+      ${camp.config.adSpend ? ` + ${fmtMoney(camp.config.adSpend)} ad spend` : ""}
+    </p>
+  </div>
+
+  ${camp.config.notes ? `<p class="note"><strong>Notes:</strong> ${esc(camp.config.notes)}</p>` : ""}
+  ${camp.config.risks ? `<p class="note"><strong>Risks / dependencies:</strong> ${esc(camp.config.risks)}</p>` : ""}
+</div>
+<hr style="border:none;border-top:1px solid #e6e0d2;margin:28px 0">`;
+    })
+    .join("");
+
+  const body = `
+<div class="eyebrow">Client Campaign Overview</div>
+<h1>${esc(client.name)}</h1>
+<p class="meta">
+  ${client.contactName ? `Contact: ${esc(client.contactName)}` : ""}
+  ${client.contactEmail ? ` · ${esc(client.contactEmail)}` : ""}
+  · Generated ${new Date().toLocaleDateString()}
+  · ${campaigns.length} campaign${campaigns.length !== 1 ? "s" : ""}
+</p>
+
+${campSections}`;
+
+  return documentShell(title, body);
+}
+
+export function downloadAllClientHtmls(
+  clients: AdminClient[],
+  campaigns: Campaign[],
+  podTemplates: Record<SkuId, PodTemplateStep[]>,
+  podTemplatesCreativeOnly: Record<SkuId, PodTemplateStep[]>,
+): void {
+  const clientsWithCampaigns = clients.filter((cl) =>
+    campaigns.some((c) => c.config.clientId === cl.id)
+  );
+
+  clientsWithCampaigns.forEach((client, i) => {
+    const clientCampaigns = campaigns.filter((c) => c.config.clientId === client.id);
+    if (clientCampaigns.length === 0) return;
+    const html = buildClientSummaryHtml(client, clientCampaigns, podTemplates, podTemplatesCreativeOnly);
+    const slug = client.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    setTimeout(() => downloadHtmlFile(`${slug}-campaigns.html`, html), i * 250);
+  });
 }
