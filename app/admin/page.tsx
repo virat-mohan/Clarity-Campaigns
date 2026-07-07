@@ -10,6 +10,7 @@ import { buildAutoPod, applyPodOverrides } from "@/lib/calc/staffing";
 import { buildSprintBreakdown } from "@/lib/calc/sprint";
 import { buildFreelancerCallHtml, downloadHtmlFile, downloadAllClientHtmls } from "@/lib/export/html-export";
 import { downloadCampaignExcel } from "@/lib/export/excel-export";
+import { parseExcelImport, ImportedCampaign } from "@/lib/export/excel-import";
 import { CampaignStatusBadge } from "@/components/campaign-status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,9 +60,15 @@ export default function AdminPage() {
   const setAnthropicApiKey = useAdminStore((s) => s.setAnthropicApiKey);
 
   const campaigns = useCampaignStore((s) => s.campaigns);
+  const createCampaign = useCampaignStore((s) => s.createCampaign);
+  const updateConfig = useCampaignStore((s) => s.updateConfig);
+  const setStatus = useCampaignStore((s) => s.setStatus);
 
   const [tab, setTab] = useState("freelancers");
   const [biddingCampaignId, setBiddingCampaignId] = useState<string>("");
+  const [importPreview, setImportPreview] = useState<ImportedCampaign[] | null>(null);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importStatus, setImportStatus] = useState<string>("");
   const [templateSku, setTemplateSku] = useState<SkuId>("abm");
   const [templateMode, setTemplateMode] = useState<"fullservice" | "creativesonly">("fullservice");
 
@@ -124,6 +131,83 @@ export default function AdminPage() {
 
   function handleExportClientHtmls() {
     downloadAllClientHtmls(clients, campaigns, podTemplates, podTemplatesCreativeOnly);
+  }
+
+  async function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportStatus("");
+    setImportErrors([]);
+    setImportPreview(null);
+    try {
+      const result = await parseExcelImport(file);
+      setImportPreview(result.campaigns);
+      setImportErrors(result.errors);
+    } catch (err) {
+      setImportErrors([`Failed to read file: ${String(err)}`]);
+    }
+    // Reset input so the same file can be re-selected
+    e.target.value = "";
+  }
+
+  function handleConfirmImport() {
+    if (!importPreview || importPreview.length === 0) return;
+    let created = 0;
+
+    for (const imp of importPreview) {
+      // Find or create client
+      let clientId = "";
+      const existing = clients.find(
+        (c) => c.name.toLowerCase().trim() === imp.clientName.toLowerCase().trim()
+      );
+      if (existing) {
+        clientId = existing.id;
+      } else if (imp.clientName) {
+        // addClient creates a blank client; we need its id — use a temp approach
+        addClient();
+        // The new client is appended last
+        const newClient = useAdminStore.getState().clients.at(-1);
+        if (newClient) {
+          clientId = newClient.id;
+          updateClient(clientId, { name: imp.clientName });
+        }
+      }
+
+      const id = createCampaign(imp.sku, clientId || undefined);
+      updateConfig(id, {
+        client: imp.clientName,
+        clientId,
+        name: imp.name,
+        objective: imp.objective,
+        sell: imp.sell,
+        goal: imp.goal,
+        industry: imp.industry,
+        audienceSize: imp.audienceSize,
+        icp: imp.icp,
+        source: imp.source,
+        channels: imp.channels,
+        qualifiedPct: imp.qualifiedPct,
+        opportunityPct: imp.opportunityPct,
+        closePct: imp.closePct,
+        asp: imp.asp,
+        aspUnit: imp.aspUnit,
+        adSpend: imp.adSpend,
+        adSpendCadence: imp.adSpendCadence,
+        owner: imp.owner,
+        weeks: imp.weeks,
+        sprints: imp.sprints,
+        notes: imp.notes,
+        risks: imp.risks,
+        creativesOnly: imp.creativesOnly,
+        podOverrides: imp.podOverrides,
+      });
+      setStatus(id, imp.status);
+      created++;
+    }
+
+    setImportStatus(`${created} campaign${created !== 1 ? "s" : ""} imported successfully.`);
+    setImportPreview(null);
+    setImportErrors([]);
   }
 
   return (
@@ -796,6 +880,67 @@ export default function AdminPage() {
               </Card>
             </div>
           )}
+
+          {/* ── Import ── */}
+          <div className="mt-8 border-t border-border pt-8 max-w-xl">
+            <div className="font-mono-label text-[9.5px] text-primary mb-1">Import from Excel</div>
+            <p className="text-[12.5px] text-muted-foreground mb-4">
+              Upload a <strong>.xlsx</strong> file exported from this app (by you or someone else).
+              Each campaign tab is parsed and created here — clients that don&apos;t exist yet are
+              created automatically. Existing campaigns are not touched.
+            </p>
+
+            <label className="flex items-center gap-2 cursor-pointer w-fit">
+              <div className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-[12.5px] font-medium hover:bg-accent transition-colors">
+                <Download className="h-3.5 w-3.5 rotate-180" />
+                Choose .xlsx file…
+              </div>
+              <input
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="sr-only"
+                onChange={handleImportFileChange}
+              />
+            </label>
+
+            {importErrors.length > 0 && (
+              <div className="mt-3 p-3 rounded-[4px] bg-destructive/10 border border-destructive/20">
+                {importErrors.map((e, i) => (
+                  <p key={i} className="text-[12px] text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+
+            {importPreview && importPreview.length > 0 && (
+              <div className="mt-4">
+                <p className="text-[12.5px] font-semibold mb-2">
+                  Ready to import {importPreview.length} campaign{importPreview.length !== 1 ? "s" : ""}:
+                </p>
+                <div className="flex flex-col gap-1 mb-4 max-h-60 overflow-y-auto">
+                  {importPreview.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] border-b border-paper-border pb-1">
+                      <span className="font-mono text-[10px] text-muted-foreground w-5 text-right">{i + 1}</span>
+                      <span className="font-medium flex-1">{c.name || "(Untitled)"}</span>
+                      <span className="text-muted-foreground">{c.clientName || "—"}</span>
+                      <span className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">{c.sku}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleConfirmImport}>
+                    Import {importPreview.length} campaign{importPreview.length !== 1 ? "s" : ""}
+                  </Button>
+                  <Button variant="outline" onClick={() => { setImportPreview(null); setImportErrors([]); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {importStatus && (
+              <p className="mt-3 text-[12.5px] text-secondary font-medium">{importStatus}</p>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
