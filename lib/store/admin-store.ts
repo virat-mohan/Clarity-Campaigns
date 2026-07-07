@@ -157,9 +157,18 @@ function buildSeedPodTemplatesCreativeOnly(): Record<SkuId, PodTemplateStep[]> {
   return result as Record<SkuId, PodTemplateStep[]>;
 }
 
+export interface AdminClient {
+  id: string;
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  industry: string;
+}
+
 interface AdminStoreState {
   freelancers: Freelancer[];
   vendors: AdminVendor[];
+  clients: AdminClient[];
   podTemplates: Record<SkuId, PodTemplateStep[]>;
   podTemplatesCreativeOnly: Record<SkuId, PodTemplateStep[]>;
   anthropicApiKey: string;
@@ -174,6 +183,9 @@ interface AdminStoreState {
   addVendor: () => void;
   updateVendor: (id: string, partial: Partial<Omit<AdminVendor, "id">>) => void;
   removeVendor: (id: string) => void;
+  addClient: () => void;
+  updateClient: (id: string, partial: Partial<Omit<AdminClient, "id">>) => void;
+  removeClient: (id: string) => void;
   addTemplateStep: (sku: SkuId) => void;
   updateTemplateStep: (sku: SkuId, id: string, partial: Partial<Omit<PodTemplateStep, "id">>) => void;
   removeTemplateStep: (sku: SkuId, id: string) => void;
@@ -193,6 +205,7 @@ export const useAdminStore = create<AdminStoreState>()(
     (set) => ({
       freelancers: buildSeedFreelancers(),
       vendors: buildSeedVendors(),
+      clients: [],
       podTemplates: buildSeedPodTemplates(),
       podTemplatesCreativeOnly: buildSeedPodTemplatesCreativeOnly(),
       anthropicApiKey: "",
@@ -224,6 +237,16 @@ export const useAdminStore = create<AdminStoreState>()(
       updateVendor: (id, partial) =>
         set((state) => ({ vendors: state.vendors.map((v) => (v.id === id ? { ...v, ...partial } : v)) })),
       removeVendor: (id) => set((state) => ({ vendors: state.vendors.filter((v) => v.id !== id) })),
+      addClient: () =>
+        set((state) => ({
+          clients: [
+            ...state.clients,
+            { id: newId("client"), name: "", contactName: "", contactEmail: "", industry: "" },
+          ],
+        })),
+      updateClient: (id, partial) =>
+        set((state) => ({ clients: state.clients.map((c) => (c.id === id ? { ...c, ...partial } : c)) })),
+      removeClient: (id) => set((state) => ({ clients: state.clients.filter((c) => c.id !== id) })),
       addTemplateStep: (sku) =>
         set((state) => {
           const existing = state.podTemplates[sku] ?? [];
@@ -315,11 +338,14 @@ export const useAdminStore = create<AdminStoreState>()(
     }),
     {
       name: "clarity-admin-data",
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Partial<AdminStoreState>;
         if (version < 2 && !state.podTemplatesCreativeOnly) {
           state.podTemplatesCreativeOnly = buildSeedPodTemplatesCreativeOnly();
+        }
+        if (version < 3 && !state.clients) {
+          state.clients = [];
         }
         return state;
       },

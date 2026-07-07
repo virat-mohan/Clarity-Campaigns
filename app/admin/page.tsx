@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useAdminStore, VendorMediaType } from "@/lib/store/admin-store";
-import { useClientStore } from "@/lib/store/client-store";
+import { useAdminStore, AdminClient, VendorMediaType } from "@/lib/store/admin-store";
 import { CAMPAIGN_TYPES, CAMPAIGN_TYPE_LIST, SkuId } from "@/lib/data/campaign-types";
 import { ROLE_LIBRARY } from "@/lib/data/role-library";
 import { useCampaignStore } from "@/lib/store/campaign-store";
@@ -34,6 +33,11 @@ export default function AdminPage() {
   const updateVendor = useAdminStore((s) => s.updateVendor);
   const removeVendor = useAdminStore((s) => s.removeVendor);
 
+  const clients = useAdminStore((s) => s.clients);
+  const addClient = useAdminStore((s) => s.addClient);
+  const updateClient = useAdminStore((s) => s.updateClient);
+  const removeClient = useAdminStore((s) => s.removeClient);
+
   const podTemplates = useAdminStore((s) => s.podTemplates);
   const addTemplateStep = useAdminStore((s) => s.addTemplateStep);
   const updateTemplateStep = useAdminStore((s) => s.updateTemplateStep);
@@ -54,7 +58,6 @@ export default function AdminPage() {
   const setAnthropicApiKey = useAdminStore((s) => s.setAnthropicApiKey);
 
   const campaigns = useCampaignStore((s) => s.campaigns);
-  const clientProfile = useClientStore((s) => s.profile);
 
   const [tab, setTab] = useState("freelancers");
   const [biddingCampaignId, setBiddingCampaignId] = useState<string>("");
@@ -648,100 +651,76 @@ export default function AdminPage() {
 
         {/* ── Clients ── */}
         <TabsContent value="clients">
-          <p className="mb-6 text-[12.5px] text-muted-foreground">
-            View client profiles submitted through the Client Portal and the campaigns associated with each account.
+          <p className="mb-4 text-[12.5px] text-muted-foreground">
+            Manage your client list. Clients added here appear in the campaign wizard&apos;s Client dropdown.
           </p>
 
-          {!clientProfile ? (
-            <div className="py-12 text-center text-muted-foreground text-[13px]">
-              No client profiles yet. Clients can create a profile at{" "}
-              <Link href="/client" className="text-primary underline underline-offset-2">
-                /client
-              </Link>
-              .
-            </div>
-          ) : (
-            <>
-              <Card className="mb-6">
-                <CardContent className="pt-5">
-                  <div className="font-mono-label text-[9.5px] text-primary mb-3">Client account</div>
-                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[12.5px] mb-4">
-                    <div>
-                      <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">Company</div>
-                      <div className="font-semibold">{clientProfile.companyName}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">Contact</div>
-                      <div>{clientProfile.contactName}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">Email</div>
-                      <div>{clientProfile.email || "—"}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">Website</div>
-                      <div>{clientProfile.website || "—"}</div>
-                    </div>
-                    {clientProfile.brandBookFileName && (
+          {/* Admin-managed client list */}
+          <div className="flex flex-col gap-3 mb-6">
+            {clients.length === 0 && (
+              <div className="py-10 text-center text-muted-foreground text-[13px] border border-dashed border-border rounded-[6px]">
+                No clients yet. Click &ldquo;Add client&rdquo; to create your first one.
+              </div>
+            )}
+            {clients.map((c: AdminClient) => {
+              const clientCampaigns = campaigns.filter((camp) => camp.config.clientId === c.id);
+              return (
+                <Card key={c.id} className="bg-paper border-paper-border">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                       <div>
-                        <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">Brand book</div>
-                        <div className="font-mono text-[11px]">{clientProfile.brandBookFileName}</div>
+                        <Label className="mb-0.5">Company name <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={c.name}
+                          placeholder="Acme Corp"
+                          onChange={(e) => updateClient(c.id, { name: e.target.value })}
+                        />
                       </div>
-                    )}
-                    {clientProfile.icpText && (
-                      <div className="sm:col-span-2">
-                        <div className="text-[10px] text-muted-foreground-2 font-mono uppercase tracking-wide mb-0.5">ICP</div>
-                        <div className="text-muted-foreground">{clientProfile.icpText}</div>
+                      <div>
+                        <Label className="mb-0.5">Contact name</Label>
+                        <Input
+                          value={c.contactName}
+                          placeholder="Jane Smith"
+                          onChange={(e) => updateClient(c.id, { contactName: e.target.value })}
+                        />
                       </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-border pt-4">
-                    <div className="font-mono-label text-[9.5px] text-muted-foreground mb-3">
-                      Campaigns ({campaigns.filter((c) => c.clientId === clientProfile.id).length})
+                      <div>
+                        <Label className="mb-0.5">Contact email</Label>
+                        <Input
+                          type="email"
+                          value={c.contactEmail}
+                          placeholder="jane@acme.com"
+                          onChange={(e) => updateClient(c.id, { contactEmail: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="mb-0.5">Industry</Label>
+                        <Input
+                          value={c.industry}
+                          placeholder="e.g. SaaS, Real Estate"
+                          onChange={(e) => updateClient(c.id, { industry: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    {campaigns.filter((c) => c.clientId === clientProfile.id).length === 0 ? (
-                      <p className="text-[12.5px] text-muted-foreground">No campaigns created by this client yet.</p>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        {campaigns
-                          .filter((c) => c.clientId === clientProfile.id)
-                          .sort((a, b) => b.updatedAt - a.updatedAt)
-                          .map((c) => {
-                            const ct = CAMPAIGN_TYPES[c.sku];
-                            return (
-                              <div
-                                key={c.id}
-                                className="flex items-center gap-3 rounded-[4px] border border-border px-3 py-2.5 flex-wrap"
-                              >
-                                <CampaignStatusBadge status={c.status} />
-                                <span className="font-mono text-[9.5px] text-muted-foreground-2">{ct.label}</span>
-                                <span className="flex-1 text-[13px] font-semibold font-heading min-w-0">
-                                  {c.config.name || "(Untitled)"}
-                                </span>
-                                <div className="flex gap-1.5 shrink-0">
-                                  <Link href={`/build/${c.id}`}>
-                                    <Button variant="ghost" size="sm" className="h-6 font-mono text-[10px] gap-1">
-                                      Edit
-                                    </Button>
-                                  </Link>
-                                  <Link href={`/proposal/${c.id}`} target="_blank">
-                                    <Button variant="ghost" size="sm" className="h-6 font-mono text-[10px] gap-1">
-                                      <ExternalLink className="h-3 w-3" />
-                                      Proposal
-                                    </Button>
-                                  </Link>
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10.5px] text-muted-foreground">
+                        {clientCampaigns.length} campaign{clientCampaigns.length !== 1 ? "s" : ""}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-destructive hover:text-destructive"
+                        onClick={() => removeClient(c.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          <Button variant="outline" size="sm" onClick={addClient}>+ Add client</Button>
         </TabsContent>
       </Tabs>
     </div>

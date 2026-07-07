@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { useAdminStore } from "@/lib/store/admin-store";
 import { cn } from "@/lib/utils";
 
 const OBJECTIVES = [
@@ -47,6 +48,7 @@ export function BriefForm({
   config: CampaignConfig;
   onChange: (partial: Partial<CampaignConfig>) => void;
 }) {
+  const clients = useAdminStore((s) => s.clients);
   const isSales = ct.mode === "sales";
   const hasEmail = config.channels.includes("Email");
   const hasLI = config.channels.includes("LinkedIn");
@@ -92,8 +94,34 @@ export function BriefForm({
       <Section title="Campaign Overview">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label>Client</Label>
-            <Input value={config.client} onChange={(e) => onChange({ client: e.target.value })} />
+            <Label>Client <span className="text-destructive">*</span></Label>
+            {clients.length === 0 ? (
+              <div className="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-[12px] text-muted-foreground">
+                No clients yet — <a href="/admin" className="ml-1 underline underline-offset-2 text-primary">add one in Admin</a>
+              </div>
+            ) : (
+              <Select
+                value={config.clientId || "__none__"}
+                onValueChange={(v) => {
+                  if (v === "__none__") {
+                    onChange({ client: "", clientId: "" });
+                  } else {
+                    const c = clients.find((x) => x.id === v);
+                    if (c) onChange({ client: c.name, clientId: c.id });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Select client…</SelectItem>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div>
             <Label>Campaign name</Label>

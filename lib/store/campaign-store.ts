@@ -45,6 +45,7 @@ export interface InfluencerEntry {
 
 export interface CampaignConfig {
   client: string;
+  clientId: string;
   clientSpoc: string;
   name: string;
   objective: string;
@@ -120,6 +121,7 @@ function buildDefaultConfig(sku: SkuId): CampaignConfig {
   const benchmark = industryFunnelBenchmark(defaultIndustry, ct.channels);
   return {
     client: "",
+    clientId: "",
     clientSpoc: "",
     name: "",
     objective: "Lead Generation",
