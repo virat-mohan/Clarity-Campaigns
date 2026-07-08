@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useClientStore } from "@/lib/store/client-store";
 import { useCampaignStore } from "@/lib/store/campaign-store";
+import { useAdminStore } from "@/lib/store/admin-store";
 import { CAMPAIGN_TYPES, CAMPAIGN_TYPE_LIST } from "@/lib/data/campaign-types";
 import { CampaignStatusBadge } from "@/components/campaign-status-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,9 +13,22 @@ import { User, Pencil, ArrowRight } from "lucide-react";
 export default function ClientPortalPage() {
   const profile = useClientStore((s) => s.profile);
   const campaigns = useCampaignStore((s) => s.campaigns);
+  const adminClients = useAdminStore((s) => s.clients);
 
+  // Match campaigns by:
+  // 1. top-level clientId (set when campaign was created via client portal flow)
+  // 2. config.clientId matching an admin client whose name matches the profile company
+  // 3. config.client name directly matching the profile company name
   const clientCampaigns = profile
-    ? campaigns.filter((c) => c.clientId === profile.id)
+    ? campaigns.filter((c) => {
+        if (c.clientId === profile.id) return true;
+        const name = profile.companyName.toLowerCase().trim();
+        if (!name) return false;
+        if ((c.config.client ?? "").toLowerCase().trim() === name) return true;
+        const adminClient = adminClients.find((ac) => ac.id === c.config.clientId);
+        if (adminClient && adminClient.name.toLowerCase().trim() === name) return true;
+        return false;
+      })
     : [];
 
   if (!profile) {

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClientStore } from "@/lib/store/client-store";
+import { useAdminStore } from "@/lib/store/admin-store";
+import { useCampaignStore } from "@/lib/store/campaign-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +20,13 @@ export default function ClientProfilePage() {
   const router = useRouter();
   const profile = useClientStore((s) => s.profile);
   const upsertProfile = useClientStore((s) => s.upsertProfile);
+  const adminClients = useAdminStore((s) => s.clients);
+  const campaigns = useCampaignStore((s) => s.campaigns);
+
+  // Which admin clients have at least one campaign — only show those in the picker
+  const clientsWithCampaigns = adminClients.filter((ac) =>
+    campaigns.some((c) => c.config.clientId === ac.id || (c.config.client ?? "").toLowerCase() === ac.name.toLowerCase())
+  );
 
   const [form, setForm] = useState({
     companyName: "",
@@ -68,6 +77,47 @@ export default function ClientProfilePage() {
       </div>
 
       <div className="flex flex-col gap-4">
+        {/* Quick-select from existing admin clients that have campaigns */}
+        {clientsWithCampaigns.length > 0 && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-4 pb-4">
+              <div className="font-mono-label text-[9.5px] text-primary mb-2">Identify your company</div>
+              <p className="text-[12px] text-muted-foreground mb-3">
+                Select your company to instantly see your campaigns — no manual entry needed.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {clientsWithCampaigns.map((ac) => {
+                  const count = campaigns.filter(
+                    (c) => c.config.clientId === ac.id || (c.config.client ?? "").toLowerCase() === ac.name.toLowerCase()
+                  ).length;
+                  return (
+                    <button
+                      key={ac.id}
+                      type="button"
+                      onClick={() => {
+                        setForm((f) => ({
+                          ...f,
+                          companyName: ac.name,
+                          contactName: f.contactName || ac.contactName,
+                          email: f.email || ac.contactEmail,
+                          industry: ac.industry || f.industry,
+                        }));
+                        setSaved(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-background px-3 py-1.5 text-[12px] font-medium hover:bg-primary/10 transition-colors"
+                    >
+                      {ac.name}
+                      <span className="font-mono text-[10px] text-muted-foreground ml-1">
+                        {count} campaign{count !== 1 ? "s" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="pt-5">
             <div className="font-mono-label text-[9.5px] text-primary mb-4">Company details</div>
