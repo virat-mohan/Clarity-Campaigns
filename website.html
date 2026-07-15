@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ClarityHQ Campaign Marketplace</title>
 <meta name="description" content="Internal discussion demo — buy a growth pod, configured and priced end to end." />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<!-- Fully self-contained: no external fonts, scripts, or styles. Works offline. -->
 <style>
 /* ---------------------------------------------------------------------------
    Design tokens — ported verbatim from app/globals.css
@@ -35,9 +33,11 @@
   --ring: #d1a02e;
   --radius: 0.5rem;
   --radius-card: 1.25rem;
-  --font-heading: "Fraunces";
-  --font-sans: "Plus Jakarta Sans";
-  --font-mono: "IBM Plex Mono";
+  /* Self-contained font stacks — no web fonts required. Serif display for
+     headings, native UI sans for body, native mono for labels. */
+  --font-heading: "Fraunces", "Georgia", "Times New Roman", ui-serif, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
@@ -225,6 +225,36 @@ textarea.inp { min-height: 70px; resize: vertical; }
 .trust { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 16px; font-size: 10.5px; color: var(--muted-foreground-2); }
 @media (min-width: 640px) { .pay-btns { flex-direction: row !important; } }
 
+/* Quiz */
+.qsteps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.qstep-pill { font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 9999px; border: 1px solid var(--border); color: var(--muted-foreground-2); }
+.qstep-pill.done { border-color: rgba(122,132,85,0.5); color: var(--secondary); }
+.qstep-pill.cur { border-color: var(--primary); color: var(--primary); background: rgba(209,160,46,0.1); }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--border-strong); background: var(--card); color: var(--foreground); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; margin-bottom: 8px; }
+.opt:hover { border-color: var(--primary); }
+.opt.sel { border-color: var(--primary); background: rgba(209,160,46,0.12); color: var(--primary); }
+.opt .tick { opacity: 0; color: var(--primary); font-weight: 700; }
+.opt.sel .tick { opacity: 1; }
+.meter { height: 10px; border-radius: 9999px; background: var(--muted); overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--primary); transition: width .4s; }
+.rchip { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 7px 10px; border-radius: var(--radius); border: 1px solid var(--border); }
+.rchip.on { border-color: rgba(122,132,85,0.45); color: var(--foreground); }
+.rchip.on .rdot { color: var(--secondary); }
+.rchip .rdot { color: var(--muted-foreground-2); font-weight: 700; }
+.rec-card { border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); padding: 18px; }
+.rec-card.top { border-color: var(--primary); background: rgba(209,160,46,0.06); }
+.roadmap-step { display: flex; gap: 12px; align-items: flex-start; padding-bottom: 14px; }
+.roadmap-dot { flex: none; width: 28px; height: 28px; border-radius: 9999px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 9px; font-weight: 600; border: 1px solid var(--border-strong); color: var(--primary); }
+/* FAQ */
+.faq-cat-title { font-family: var(--font-mono); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: 10px; color: var(--primary); margin: 22px 0 8px; }
+.faq-item { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; background: var(--card); }
+.faq-q { display: flex; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 13px 15px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--foreground); border: none; font-family: inherit; }
+.faq-q .chev { flex: none; color: var(--muted-foreground-2); transition: transform .2s; }
+.faq-item.open .faq-q .chev { transform: rotate(180deg); }
+.faq-a { padding: 0 15px 13px; font-size: 12.5px; color: var(--muted-foreground); line-height: 1.65; }
+.faq-a p { margin-bottom: 8px; }
+.flag { display: inline-block; margin-left: 6px; font-family: var(--font-mono); font-size: 8.5px; padding: 1px 5px; border-radius: 3px; background: rgba(176,85,58,0.12); color: var(--destructive); border: 1px solid rgba(176,85,58,0.3); vertical-align: middle; }
+
 .hidden { display: none !important; }
 .mb2 { margin-bottom: 8px; } .mb3 { margin-bottom: 12px; } .mb4 { margin-bottom: 16px; } .mb6 { margin-bottom: 24px; }
 .mt3 { margin-top: 12px; } .mt4 { margin-top: 16px; }
@@ -243,9 +273,9 @@ textarea.inp { min-height: 70px; resize: vertical; }
     </a>
     <span class="pill-tag">Campaign Marketplace</span>
     <div class="nav">
-      <a class="link" href="#" onclick="alert('My Campaigns — workspace listing (prototype)');return false;">My Campaigns</a>
-      <a class="link" href="#" onclick="alert('Client Portal (prototype)');return false;">Client Portal</a>
-      <a class="link" href="#" onclick="alert('Admin panel (prototype)');return false;">Admin</a>
+      <a class="link" href="#" onclick="go('campaigns');return false;">My Campaigns</a>
+      <a class="link" href="#" onclick="go('portal');return false;">Client Portal</a>
+      <a class="link" href="#" onclick="go('admin');return false;">Admin</a>
       <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us</a>
     </div>
   </div>
@@ -451,7 +481,13 @@ function go(screen, sku){
   else if (screen === "brief") renderBrief();
   else if (screen === "plan") renderPlan();
   else if (screen === "pay") renderPay();
-  location.hash = screen + (state.selectedSku ? "/"+SKU_TO_SLUG[state.selectedSku] : "");
+  else if (screen === "quiz") renderQuiz();
+  else if (screen === "faq") renderFaq();
+  else if (screen === "campaigns") renderMyCampaigns();
+  else if (screen === "portal") renderClientPortal();
+  else if (screen === "admin") renderAdmin();
+  const sluggable = ["brief","plan","pay"].includes(screen);
+  location.hash = screen + (sluggable && state.selectedSku ? "/"+SKU_TO_SLUG[state.selectedSku] : "");
 }
 
 /* ---------------------------------------------------------------------------
@@ -561,12 +597,12 @@ function renderStart(){
       <div class="quiz-cta">
         <div class="mono-label" style="font-size:10px;color:var(--muted-foreground)">Not sure which campaign you need?</div>
         <div style="display:flex;gap:8px;flex:none;align-items:center">
-          <button class="btn btn-default btn-sm" onclick="alert('Campaign recommendation quiz — 10 questions + readiness scoring (prototype)')">Take the quiz</button>
+          <button class="btn btn-default btn-sm" onclick="startQuiz()">Take the quiz</button>
           <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us instead</a>
         </div>
       </div>
       <div class="mt3" style="text-align:center">
-        <a href="#" onclick="alert('FAQ page (prototype)');return false;" style="font-size:11px;color:var(--muted-foreground-2);text-decoration:underline;text-underline-offset:2px">Questions? Read the FAQ</a>
+        <a href="#" onclick="go('faq');return false;" style="font-size:11px;color:var(--muted-foreground-2);text-decoration:underline;text-underline-offset:2px">Questions? Read the FAQ</a>
       </div>
     </div>
   </section>`;
@@ -864,12 +900,355 @@ function setSpecific(id,v){ state.campaignSpecific[id]=v; save(); }
 function setBudget(k,v){ state.budget[k]=v; save(); }
 function setGoal(v){ state.primaryGoal = (state.primaryGoal===v?"":v); save(); renderBrief(); }
 
+/* ===========================================================================
+   Recommendation quiz — ported from lib/quiz + lib/scoring
+=========================================================================== */
+const QUIZ_QUESTIONS = [
+  { key:"primary_goal", type:"single", short:"Goal", label:"What's your primary business goal right now?", options:[
+    {value:"increase_revenue",label:"Increase overall revenue"},{value:"generate_more_leads",label:"Generate more leads"},
+    {value:"launch_new_product",label:"Launch a new product"},{value:"increase_brand_awareness",label:"Increase brand awareness"},
+    {value:"grow_organic_traffic",label:"Grow organic traffic"},{value:"increase_repeat_purchases",label:"Increase repeat purchases"},
+    {value:"reduce_cac",label:"Reduce customer acquisition cost"},{value:"improve_conversion_rate",label:"Improve conversion rate"}]},
+  { key:"business_type", type:"single", short:"Business", label:"What type of business are you running?", options:[
+    {value:"d2c",label:"D2C / eCommerce"},{value:"b2b_services",label:"B2B Services"},{value:"saas",label:"SaaS"},
+    {value:"marketplace",label:"Marketplace"},{value:"hospitality",label:"Hospitality"},{value:"healthcare",label:"Healthcare"},{value:"retail",label:"Retail"}]},
+  { key:"business_stage", type:"single", short:"Stage", label:"What stage is the business at?", options:[
+    {value:"startup",label:"Startup"},{value:"growing",label:"Growing"},{value:"scaling",label:"Scaling"},{value:"enterprise",label:"Enterprise"}]},
+  { key:"biggest_challenge", type:"single", short:"Challenge", label:"What's the biggest challenge you're facing?", options:[
+    {value:"not_enough_visitors",label:"Not enough visitors / traffic"},{value:"visitors_dont_convert",label:"Visitors don't convert"},
+    {value:"leads_dont_respond",label:"Leads don't respond"},{value:"sales_cycle_too_long",label:"Sales cycle is too long"},
+    {value:"customers_dont_return",label:"Customers don't come back"},{value:"organic_traffic_poor",label:"Organic traffic is poor"},
+    {value:"ads_not_profitable",label:"Ads aren't profitable"}]},
+  { key:"marketing_experience", type:"single", short:"Experience", label:"What's your marketing experience so far?", options:[
+    {value:"never",label:"Never run marketing before"},{value:"agency",label:"Worked with an agency"},{value:"in_house",label:"Have an in-house team"}]},
+  { key:"monthly_budget", type:"single", short:"Budget", label:"What's your monthly marketing budget?", options:[
+    {value:"below_500",label:"Below $500 / mo"},{value:"500_2k",label:"$500 – $2k / mo"},{value:"2k_5k",label:"$2k – $5k / mo"},
+    {value:"5k_20k",label:"$5k – $20k / mo"},{value:"above_20k",label:"Above $20k / mo"}]},
+  { key:"timeline", type:"single", short:"Timeline", label:"How soon do you need results?", options:[
+    {value:"immediate",label:"Immediate (ASAP)"},{value:"30_days",label:"Within 30 days"},{value:"90_days",label:"Within 90 days"},{value:"long_term",label:"Long-term (6+ months)"}]},
+  { key:"primary_kpi", type:"single", short:"KPI", label:"Which metric matters most to you?", options:[
+    {value:"revenue",label:"Revenue"},{value:"roas",label:"ROAS"},{value:"pipeline",label:"Pipeline / meetings booked"},
+    {value:"traffic",label:"Website traffic"},{value:"followers",label:"Social followers"},{value:"retention",label:"Retention rate"}]},
+  { key:"current_channels", type:"multi", short:"Channels", label:"Which acquisition channels are you currently using?", helper:'Select all that apply, or "None yet" if you\'re starting from scratch.', options:[
+    {value:"paid_ads",label:"Paid Ads"},{value:"organic",label:"Organic / Content"},{value:"referrals",label:"Referrals"},{value:"none",label:"None yet — starting from scratch"}]},
+  { key:"missing_assets", type:"multi", short:"Assets", label:"Which of these are you currently missing?", helper:"Select anything you don't have yet — it's fine if none apply.", options:[
+    {value:"missing_website",label:"A website"},{value:"missing_crm",label:"A CRM"},{value:"missing_analytics",label:"Analytics set up"},{value:"missing_brand_guidelines",label:"Brand guidelines"}]},
+];
+const READINESS_QUESTIONS = [
+  {id:"website",label:"Website",helper:"A live site customers can land on"},
+  {id:"brand_guidelines",label:"Brand Guidelines",helper:"Logo, colors, voice — documented"},
+  {id:"crm",label:"CRM",helper:"Somewhere leads and customers are tracked"},
+  {id:"analytics",label:"Analytics",helper:"Traffic and conversion tracking in place"},
+  {id:"tracking_pixel",label:"Tracking Pixel",helper:"Meta / Google pixel installed"},
+  {id:"creative_assets",label:"Creative Assets",helper:"Photos, videos, or templates ready to use"},
+  {id:"product_catalogue",label:"Product Catalogue",helper:"Products/services listed with pricing"},
+  {id:"marketing_automation",label:"Marketing Automation",helper:"Email/WhatsApp flows already set up"},
+];
+const SCORING = {
+  campaigns:["performance_marketing","outbound_sales","social_organic","seo_aeo","customer_retention"],
+  flywheelStage:{ social_organic:"acquisition", seo_aeo:"acquisition", performance_marketing:"conversion", outbound_sales:"conversion", customer_retention:"retention" },
+  questions:{
+    primary_goal:{ increase_revenue:{performance_marketing:10,customer_retention:6,outbound_sales:5,seo_aeo:2,social_organic:1}, generate_more_leads:{outbound_sales:10,performance_marketing:6,seo_aeo:4,social_organic:2,customer_retention:0}, launch_new_product:{performance_marketing:8,social_organic:7,seo_aeo:3,outbound_sales:4,customer_retention:2}, increase_brand_awareness:{social_organic:10,seo_aeo:5,performance_marketing:3,outbound_sales:1,customer_retention:1}, grow_organic_traffic:{seo_aeo:10,social_organic:6,performance_marketing:2,customer_retention:1,outbound_sales:1}, increase_repeat_purchases:{customer_retention:10,performance_marketing:5,social_organic:3,seo_aeo:2,outbound_sales:0}, reduce_cac:{seo_aeo:8,customer_retention:7,performance_marketing:5,social_organic:3,outbound_sales:2}, improve_conversion_rate:{performance_marketing:8,customer_retention:5,seo_aeo:4,outbound_sales:2,social_organic:1} },
+    business_type:{ d2c:{performance_marketing:8,customer_retention:8,social_organic:6,seo_aeo:5,outbound_sales:2}, b2b_services:{outbound_sales:10,seo_aeo:6,performance_marketing:5,social_organic:2,customer_retention:2}, saas:{outbound_sales:9,seo_aeo:8,performance_marketing:5,customer_retention:4,social_organic:2}, marketplace:{performance_marketing:8,seo_aeo:5,customer_retention:5,social_organic:3,outbound_sales:4}, hospitality:{performance_marketing:8,social_organic:8,customer_retention:7,seo_aeo:3,outbound_sales:1}, healthcare:{seo_aeo:8,performance_marketing:6,outbound_sales:5,customer_retention:4,social_organic:2}, retail:{performance_marketing:9,customer_retention:8,social_organic:5,seo_aeo:5,outbound_sales:1} },
+    business_stage:{ startup:{social_organic:6,seo_aeo:5,performance_marketing:4,outbound_sales:3,customer_retention:1}, growing:{performance_marketing:8,outbound_sales:6,seo_aeo:6,customer_retention:5,social_organic:4}, scaling:{performance_marketing:9,customer_retention:8,outbound_sales:7,seo_aeo:6,social_organic:5}, enterprise:{outbound_sales:9,customer_retention:9,performance_marketing:8,seo_aeo:7,social_organic:5} },
+    biggest_challenge:{ not_enough_visitors:{seo_aeo:9,performance_marketing:8,social_organic:7,outbound_sales:2,customer_retention:0}, visitors_dont_convert:{performance_marketing:10,customer_retention:6,seo_aeo:2,outbound_sales:2,social_organic:1}, leads_dont_respond:{outbound_sales:10,performance_marketing:3,seo_aeo:1,customer_retention:0,social_organic:1}, sales_cycle_too_long:{outbound_sales:9,customer_retention:5,performance_marketing:4,seo_aeo:2,social_organic:1}, customers_dont_return:{customer_retention:10,performance_marketing:3,seo_aeo:1,social_organic:2,outbound_sales:0}, organic_traffic_poor:{seo_aeo:10,social_organic:5,performance_marketing:2,customer_retention:0,outbound_sales:1}, ads_not_profitable:{performance_marketing:9,customer_retention:5,seo_aeo:4,social_organic:1,outbound_sales:1} },
+    marketing_experience:{ never:{social_organic:5,seo_aeo:5,performance_marketing:5}, agency:{performance_marketing:3,customer_retention:3,outbound_sales:3}, in_house:{} },
+    monthly_budget:{ below_500:{seo_aeo:8,social_organic:8,customer_retention:5,performance_marketing:1,outbound_sales:1}, "500_2k":{performance_marketing:5,seo_aeo:5,customer_retention:5,social_organic:5,outbound_sales:3}, "2k_5k":{performance_marketing:8,outbound_sales:6,customer_retention:6,seo_aeo:5,social_organic:0}, "5k_20k":{performance_marketing:9,outbound_sales:7,customer_retention:6,seo_aeo:5,social_organic:0}, above_20k:{performance_marketing:10,outbound_sales:8,customer_retention:7,seo_aeo:6,social_organic:0} },
+    timeline:{ immediate:{performance_marketing:10,outbound_sales:7,customer_retention:4,seo_aeo:1,social_organic:2}, "30_days":{performance_marketing:8,outbound_sales:6,customer_retention:5,seo_aeo:0,social_organic:0}, "90_days":{seo_aeo:7,social_organic:5,customer_retention:5,performance_marketing:4,outbound_sales:0}, long_term:{seo_aeo:10,social_organic:8,customer_retention:6,performance_marketing:0,outbound_sales:0} },
+    primary_kpi:{ revenue:{performance_marketing:10,customer_retention:7,outbound_sales:5,seo_aeo:0,social_organic:0}, roas:{performance_marketing:10,outbound_sales:0,seo_aeo:0,social_organic:0,customer_retention:0}, pipeline:{outbound_sales:10,performance_marketing:0,seo_aeo:0,social_organic:0,customer_retention:0}, traffic:{seo_aeo:10,social_organic:6,performance_marketing:0,outbound_sales:0,customer_retention:0}, followers:{social_organic:10,performance_marketing:0,outbound_sales:0,seo_aeo:0,customer_retention:0}, retention:{customer_retention:10,performance_marketing:0,outbound_sales:0,seo_aeo:0,social_organic:0} },
+  },
+  channelCombos:{ none:{performance_marketing:6,social_organic:6,seo_aeo:6,outbound_sales:6,customer_retention:0}, paid_ads:{seo_aeo:5,social_organic:4,customer_retention:4}, organic:{performance_marketing:7,outbound_sales:4,customer_retention:3}, referrals:{outbound_sales:6,performance_marketing:5,seo_aeo:4} },
+  assetPenalties:{ missing_website:{performance_marketing:-8,seo_aeo:-10}, missing_crm:{customer_retention:-6,outbound_sales:-4}, missing_analytics:{performance_marketing:-5,seo_aeo:-5,customer_retention:-5} },
+  readinessComponents:{ website:20, brand_guidelines:15, crm:15, analytics:15, tracking_pixel:10, creative_assets:10, product_catalogue:10, marketing_automation:5 },
+  readinessMax:100,
+};
+const CAMPAIGN_ID_TO_SKU = { performance_marketing:"performance", outbound_sales:"abm", social_organic:"social", seo_aeo:"content", customer_retention:"retention" };
+const SINGLE_KEYS = ["primary_goal","business_type","business_stage","biggest_challenge","marketing_experience","monthly_budget","timeline","primary_kpi"];
+
+function campaignLabel(cid){ return CAMPAIGN_TYPES[CAMPAIGN_ID_TO_SKU[cid]].label; }
+function emptyScores(){ const o={}; SCORING.campaigns.forEach(c=>o[c]=0); return o; }
+function addW(t,w){ if(!w) return; for(const k in w){ if(k in t) t[k]+=w[k]; } }
+function resolveChannels(sel){ const clean=(sel||[]).filter(c=>c!=="none"); if(clean.length===0) return SCORING.channelCombos.none; if(clean.length===1 && SCORING.channelCombos[clean[0]]) return SCORING.channelCombos[clean[0]]; return {}; }
+function resolveAssets(missing){ const r={}; (missing||[]).forEach(a=>{ const p=SCORING.assetPenalties[a]; if(!p) return; for(const k in p) r[k]=(r[k]||0)+p[k]; }); return r; }
+function calcScores(ans){ const s=emptyScores(); SINGLE_KEYS.forEach(k=>{ const v=ans[k]; if(v) addW(s, SCORING.questions[k][v]); }); addW(s, resolveChannels(ans.current_channels)); addW(s, resolveAssets(ans.missing_assets)); return s; }
+function getRecommendations(ans){ const scores=calcScores(ans); const all=SCORING.campaigns.map(id=>({id,score:scores[id]})).sort((a,b)=>b.score-a.score); const top=all.slice(0,3); const sum=top.reduce((a,r)=>a+Math.max(r.score,0),0); const highest=Math.max(top[0]?top[0].score:0,0); const conf=sum>0?highest/sum:0; return { top, confidence:conf, confidenceLabel:`${Math.round(conf*100)}% Match`, all }; }
+function calcReadiness(inputs){ const rows=Object.entries(SCORING.readinessComponents).map(([id,max])=>{ const present=Boolean(inputs[id]); const q=READINESS_QUESTIONS.find(r=>r.id===id); return { id, label:q?q.label:id, points:present?max:0, maxPoints:max, present }; }); const overall=rows.reduce((a,r)=>a+r.points,0); return { overall, max:SCORING.readinessMax, components:rows }; }
+function getRoadmap(ans){ const scores=calcScores(ans); const order=["acquisition","conversion","retention"]; const steps=[]; let m=1; order.forEach(stage=>{ SCORING.campaigns.filter(id=>SCORING.flywheelStage[id]===stage).sort((a,b)=>scores[b]-scores[a]).forEach(cid=>{ steps.push({stage, campaign:cid, monthLabel:`Month ${m}`}); m++; }); }); return steps; }
+
+let quiz = { step:0, answers:{}, readiness:{} };
+function startQuiz(){ quiz = { step:0, answers:{}, readiness:{} }; go("quiz"); }
+function quizPick(key,val){ quiz.answers[key]=val; quiz.step++; window.scrollTo(0,0); renderQuiz(); }
+function quizToggle(key,val){ const arr=quiz.answers[key]||[]; const i=arr.indexOf(val); if(i>=0) arr.splice(i,1); else arr.push(val); quiz.answers[key]=arr; renderQuiz(); }
+function quizReadyToggle(id){ quiz.readiness[id]=!quiz.readiness[id]; renderQuiz(); }
+function quizNext(){ quiz.step++; window.scrollTo(0,0); renderQuiz(); }
+function quizBack(){ if(quiz.step>0){ quiz.step--; window.scrollTo(0,0); renderQuiz(); } else go("start"); }
+
+function renderQuiz(){
+  const total = QUIZ_QUESTIONS.length + 1; // + readiness
+  const pills = QUIZ_QUESTIONS.map((q,i)=>{
+    const cls = i<quiz.step ? "done" : i===quiz.step ? "cur" : "";
+    return `<span class="qstep-pill ${cls}">${esc(q.short)}</span>`;
+  }).join("") + `<span class="qstep-pill ${quiz.step>QUIZ_QUESTIONS.length?"done":quiz.step===QUIZ_QUESTIONS.length?"cur":""}">Readiness</span>`;
+
+  // ---- Question steps ----
+  if (quiz.step < QUIZ_QUESTIONS.length) {
+    const q = QUIZ_QUESTIONS[quiz.step];
+    const isMulti = q.type === "multi";
+    const sel = isMulti ? (quiz.answers[q.key]||[]) : quiz.answers[q.key];
+    const opts = q.options.map(o=>{
+      const on = isMulti ? sel.includes(o.value) : sel===o.value;
+      const handler = isMulti ? `quizToggle('${q.key}','${o.value}')` : `quizPick('${q.key}','${o.value}')`;
+      return `<button class="opt ${on?"sel":""}" onclick="${handler}"><span>${esc(o.label)}</span><span class="tick">✓</span></button>`;
+    }).join("");
+    app.innerHTML = `
+    <div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:10px">Find your campaign · Step ${quiz.step+1} of ${total}</div>
+      <div class="qsteps">${pills}</div>
+      <h1 class="font-heading" style="font-size:22px;font-weight:600;margin-bottom:4px">${esc(q.label)}</h1>
+      ${q.helper?`<p style="font-size:12px;color:var(--muted-foreground-2);margin-bottom:16px">${esc(q.helper)}</p>`:`<div style="height:12px"></div>`}
+      <div>${opts}</div>
+      <div class="flex-between" style="margin-top:18px">
+        <button class="btn btn-outline" onclick="quizBack()">← Back</button>
+        ${isMulti?`<button class="btn btn-default" onclick="quizNext()">Next →</button>`:`<span style="font-size:11px;color:var(--muted-foreground-2)">Pick one to continue</span>`}
+      </div>
+    </div>`;
+    return;
+  }
+
+  // ---- Readiness step ----
+  if (quiz.step === QUIZ_QUESTIONS.length) {
+    const rows = READINESS_QUESTIONS.map(r=>{
+      const on = Boolean(quiz.readiness[r.id]);
+      return `<button class="opt ${on?"sel":""}" onclick="quizReadyToggle('${r.id}')">
+        <span><span style="display:block">${esc(r.label)}</span><span style="display:block;font-size:11px;font-weight:400;color:var(--muted-foreground-2)">${esc(r.helper)}</span></span>
+        <span class="tick">✓</span></button>`;
+    }).join("");
+    app.innerHTML = `
+    <div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:10px">Find your campaign · Step ${total} of ${total}</div>
+      <div class="qsteps">${pills}</div>
+      <h1 class="font-heading" style="font-size:22px;font-weight:600;margin-bottom:4px">Which of these do you already have?</h1>
+      <p style="font-size:12px;color:var(--muted-foreground-2);margin-bottom:16px">This sets your Readiness Score — how prepared you are to launch. Tick everything that's in place.</p>
+      <div>${rows}</div>
+      <div class="flex-between" style="margin-top:18px">
+        <button class="btn btn-outline" onclick="quizBack()">← Back</button>
+        <button class="btn btn-default" onclick="quizNext()">See my results →</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // ---- Results ----
+  const rec = getRecommendations(quiz.answers);
+  const readiness = calcReadiness(quiz.readiness);
+  const roadmap = getRoadmap(quiz.answers);
+  const pct = Math.round((readiness.overall/readiness.max)*100);
+
+  const recCards = rec.top.map((r,i)=>{
+    const sku = CAMPAIGN_ID_TO_SKU[r.id];
+    const copy = FLOW_COPY[sku], ct = CAMPAIGN_TYPES[sku];
+    const isTop = i===0;
+    const matchPct = rec.confidence>0 ? Math.round((Math.max(r.score,0)/rec.top.reduce((a,x)=>a+Math.max(x.score,0),0))*100) : 0;
+    return `<div class="rec-card ${isTop?"top":""}">
+      <div class="flex-between mb2">
+        <span class="badge ${STAGE_BADGE[ct.flywheelStage]||"badge-amber"}">${isTop?"Best match":"Also strong"}</span>
+        <span class="font-mono" style="font-size:11px;color:${isTop?"var(--primary)":"var(--muted-foreground-2)"}">${matchPct}% match</span>
+      </div>
+      <h3 class="font-heading" style="font-size:${isTop?"19":"16"}px;font-weight:600;margin-bottom:4px">${esc(ct.label)}</h3>
+      <p style="font-size:12.5px;color:var(--muted-foreground);line-height:1.45;margin-bottom:12px">${esc(copy.description)}</p>
+      <div class="flex-between">
+        <span class="font-heading" style="font-size:16px;font-weight:600">$${copy.price}</span>
+        <button class="btn ${isTop?"btn-accent":"btn-outline"} btn-sm" onclick="go('brief','${sku}')">${isTop?"Start this campaign →":"View →"}</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  const readinessChips = readiness.components.map(c=>`<div class="rchip ${c.present?"on":""}"><span>${esc(c.label)}</span><span class="rdot">${c.present?"✓ "+c.points:"—"}</span></div>`).join("");
+
+  const roadmapSteps = roadmap.map((s,i)=>{
+    const sku = CAMPAIGN_ID_TO_SKU[s.campaign];
+    const stageCap = s.stage.charAt(0).toUpperCase()+s.stage.slice(1);
+    return `<div class="roadmap-step">
+      <div class="roadmap-dot">${i+1}</div>
+      <div style="flex:1;border-bottom:1px solid var(--border);padding-bottom:12px">
+        <div class="font-mono" style="font-size:9.5px;color:var(--muted-foreground-2);text-transform:uppercase;letter-spacing:.08em">${s.monthLabel} · ${stageCap}</div>
+        <div style="font-size:13px;font-weight:600">${esc(campaignLabel(s.campaign))}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const readinessNote = pct>=80 ? "You're launch-ready — any motion will run smoothly."
+    : pct>=50 ? "Solid foundation — a couple of gaps to close as you go."
+    : "Some essentials are missing — your Campaign Lead will help set them up in week 1.";
+
+  app.innerHTML = `
+  <div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+    <div class="section-head">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Your recommendation · ${esc(rec.confidenceLabel)}</div>
+      <h1>Here's where to start</h1>
+      <p>Scored from your answers across ${QUIZ_QUESTIONS.length} questions. Top match first, with two strong alternatives.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:12px" class="mb6">${recCards}</div>
+
+    <div class="plan-block">
+      <div class="lbl" style="font-family:var(--font-mono);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:9.5px;color:var(--muted-foreground);margin-bottom:12px">Readiness score</div>
+      <div class="card"><div class="card-pad">
+        <div class="flex-between mb2"><span style="font-size:13px;font-weight:600">${readiness.overall} / ${readiness.max}</span><span style="font-size:11px;color:var(--muted-foreground-2)">${pct}% ready</span></div>
+        <div class="meter mb3"><span style="width:${pct}%"></span></div>
+        <p style="font-size:12px;color:var(--muted-foreground);margin-bottom:12px">${readinessNote}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${readinessChips}</div>
+      </div></div>
+    </div>
+
+    <div class="plan-block">
+      <div class="lbl" style="font-family:var(--font-mono);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:9.5px;color:var(--muted-foreground);margin-bottom:12px">Suggested roadmap</div>
+      <div class="card"><div class="card-pad">
+        <p style="font-size:12px;color:var(--muted-foreground);margin-bottom:14px">Run these in order to turn the flywheel — Acquisition → Conversion → Retention.</p>
+        ${roadmapSteps}
+      </div></div>
+    </div>
+
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:18px;margin-top:8px">
+      <button class="btn btn-outline" onclick="startQuiz()">↺ Retake quiz</button>
+      <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us</a>
+    </div>
+  </div>`;
+}
+
+/* ===========================================================================
+   FAQ — ported verbatim from lib/data/faq-content.ts
+=========================================================================== */
+const FAQ_CATEGORIES = [
+  { title:"THE CAMPAIGN", items:[
+    { question:"What exactly do I get for $499?", answer:["A complete, executed campaign — not a template, a strategy deck, or a set of recommendations. You get the brief, the assets, the distribution, the monitoring, and a performance report, all delivered by a dedicated Human Pod over 4 weeks.","Every campaign includes: a Brand Intelligence brief built from your X-Ray, a 4-week execution plan with named process steps, a human team of 5–6 specialists, all deliverables (content, sequences, ads, or flows — depending on campaign type), and a sprint performance report."] },
+    { question:'What does "live in 7 days" mean?', flag:true, answer:["Your campaign is live — meaning content published, ads running, or outreach sending — within 7 days of payment. Those first 7 days cover everything: brand book build, campaign strategy, communication plan, creative assets, your approval, and launch. One iteration per deliverable, approved before anything ships.","Meaningful results follow in the 21 days after launch. That's the sprint window where the campaign runs, optimises, and reports."] },
+    { question:"How is this different from a traditional full-stack agency?", flag:true, answer:["Traditional full-stack agencies charge upwards of $999/month — often significantly more — with long onboarding windows, multi-week planning phases, and monthly retainer lock-ins before a single asset goes live.","We charge $499, your campaign is live in 7 days, and you have meaningful results in 21 days. No retainer, no lock-in, no scope creep. One campaign, one sprint, one fixed price."] },
+    { question:"Can I run more than one campaign at a time?", answer:["Yes. Each campaign runs as an independent sprint with its own Human Pod. Many brands run an Acquisition campaign and a Conversion campaign simultaneously — the flywheel works faster when multiple motions are active.","If you want to discuss running two or more campaigns in parallel, book a call and we'll recommend the right sequencing."] },
+  ]},
+  { title:"THE PROCESS", items:[
+    { question:"What is the Brand Intelligence Layer and why does it matter?", answer:["The Brand Intelligence Layer is how we turn your brand book, ICP, and channel data into a live brief that governs every campaign decision — copy tone, audience targeting, channel mix, visual direction. It's why campaigns built on this layer outperform generic ones: every asset is built for your brand, not a template.","If you've already run a Brand X-Ray through our tool, the Layer is already started. If not, our team builds it in the first phase of your sprint as the foundation for everything that follows."] },
+    { question:"What is the Human Pod?", answer:["The Human Pod is the dedicated team of specialists who execute your campaign. Every Pod has 5–6 people — a Campaign Lead, a strategist for the campaign type, copywriters, designers or builders, and a QA reviewer. All drawn from our vetted network.","Human-led, AI-enabled means the Pod uses AI tools to accelerate drafts, research, and production — but every output is reviewed, edited, and approved by a human before it reaches you or goes live. You never receive raw AI output."] },
+    { question:"How much of my time does this require?", answer:["Minimal. You complete the campaign brief (5 minutes), review and approve one iteration of each deliverable — the brand book, campaign strategy document, communication plan, and creative assets — and that's it. Everything is approved before it ships. No surprises, no back-and-forth."] },
+    { question:"How does the approval process work?", answer:["We follow a single additional iteration model. For each deliverable — the brand book we build, the campaign strategy we develop, the communication plan, and the creative assets — you receive one version, give one round of feedback, and we incorporate it. That deliverable is then approved and locked before we move to the next.","Everything is approved before anything goes live. Your campaign launches on a foundation you've signed off on at every stage."] },
+  ]},
+  { title:"PRICING & PAYMENT", items:[
+    { question:"Is the $499 the total cost, or are there other fees?", answer:["$499 is the campaign fee — it covers everything the Human Pod does: strategy, brand book build, production, execution, and reporting. It does not include ad spend.","For Performance Marketing campaigns, you'll need a separate media budget (we recommend a minimum of $300–500/month for meaningful results). For all other campaigns — Social Organic, Content-Led, Outbound Sales, and Customer Retention — there is no additional spend required unless you choose to add it."] },
+    { question:"What payment methods do you accept?", answer:["Payment is processed securely via Stripe. We accept all major credit and debit cards (Visa, Mastercard, American Express), and UPI / net banking for India-based clients.","If you need an invoice before payment — for procurement or finance approval — reach out and we'll send one within 24 hours."] },
+    { question:"Is there a refund policy?", answer:["If you cancel within 48 hours of payment and before your Campaign Lead has been assigned, we'll refund in full. After the sprint begins, the campaign fee is non-refundable — but your Campaign Lead will work with you to resolve any concerns before reaching that point.","We'd rather fix the problem than issue a refund. If something isn't working, tell us and we'll make it right."] },
+  ]},
+  { title:"RESULTS & PERFORMANCE", items:[
+    { question:"What results can I expect?", answer:["Results vary by campaign type, market, and brand maturity — but the plan screen in this flow shows market-specific benchmarks for your combination of industry and country before you commit to anything.","As a reference: Outbound Sales typically delivers 8–20 qualified meetings in India, 5–15 in the US. Performance Marketing at $500 ad spend in India delivers 5–10 conversions. Social Organic delivers 200–500 new followers and 15,000–60,000 reach in India. These are benchmarks, not guarantees."] },
+    { question:"Do you guarantee results?", answer:["No — and any agency that does is not being straight with you. What we guarantee is execution: the right process, the right team, and the right inputs. Results depend on your brand, your market, your offer, and external factors we don't control.","What we do commit to: every deliverable approved before launch, every KPI tracked and reported, and a clear view of what to improve in sprint 2 based on what sprint 1 showed."] },
+    { question:"What happens after the 4-week sprint ends?", answer:["You receive a sprint performance report on Day 28 — results vs benchmarks, what worked, what to optimise, and a recommendation for sprint 2.","From there, you choose: run another $499 campaign, scale into a retainer, or pause. There is no automatic renewal and no obligation to continue. Most brands run 2–3 sprints before moving to a retainer — by which point the Brand Intelligence Layer is fully built and the campaigns are compounding."] },
+  ]},
+  { title:"CHOOSING THE RIGHT CAMPAIGN", items:[
+    { question:"How do I know which campaign to choose?", answer:["Start with the flywheel. If people don't know you exist — Acquisition (Social Organic or Content-Led). If people know you but aren't buying — Conversion (Outbound Sales or Performance Marketing). If buyers aren't coming back — Retention.","If you've run a Brand X-Ray, your score tells you the same thing: below 60 → Acquisition first. 60–79 → Conversion. 80+ → any motion, led by Performance or Outbound.","Still not sure? Book a 15-minute call and we'll recommend based on your brand."] },
+    { question:"Is this only for D2C brands?", answer:["No — though D2C is where we have the deepest track record. The campaigns work for any brand with a defined ICP: SaaS, professional services, hospitality, FMCG, fintech, and B2B businesses have all run campaigns through this system.","The Outbound Sales campaign is particularly suited to B2B businesses with a named account book. Performance and Social Organic are built around D2C and consumer brand motions."] },
+    { question:"Which markets do you work in?", answer:["We currently support campaigns in India, United States, UAE / Gulf, United Kingdom, and Singapore / SEA. The KPI benchmarks in your plan are calibrated to your selected market.","If your market isn't listed, talk to us — we work with brands in other markets on a case-by-case basis."] },
+  ]},
+];
+let faqOpen = {};
+function faqToggle(id){ faqOpen[id]=!faqOpen[id]; renderFaq(); }
+function renderFaq(){
+  const cats = FAQ_CATEGORIES.map((cat,ci)=>{
+    const items = cat.items.map((it,ii)=>{
+      const id = ci+"-"+ii;
+      const open = faqOpen[id];
+      const paras = it.answer.map(p=>`<p>${esc(p)}</p>`).join("");
+      return `<div class="faq-item ${open?"open":""}">
+        <button class="faq-q" onclick="faqToggle('${id}')"><span>${esc(it.question)}${it.flag?`<span class="flag" title="Conflicts with the '3 days to live' stat">7-day note</span>`:""}</span><span class="chev">⌄</span></button>
+        ${open?`<div class="faq-a">${paras}</div>`:""}
+      </div>`;
+    }).join("");
+    return `<div class="faq-cat-title">${esc(cat.title)}</div>${items}`;
+  }).join("");
+  app.innerHTML = `
+  <div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+    <div class="section-head">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Frequently asked questions</div>
+      <h1>Everything about the $499 campaign</h1>
+      <p>Refunds, payment, process, and results — the straight answers.</p>
+    </div>
+    ${cats}
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:18px;margin-top:20px">
+      <button class="btn btn-outline" onclick="go('start')">← Back to campaigns</button>
+      <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Still have questions? Talk to us</a>
+    </div>
+  </div>`;
+}
+
+/* ===========================================================================
+   Nav pages — My Campaigns / Client Portal / Admin (lightweight, real screens)
+=========================================================================== */
+function renderMyCampaigns(){
+  const sku = state.selectedSku;
+  let body;
+  if (sku) {
+    const ct=CAMPAIGN_TYPES[sku], copy=FLOW_COPY[sku], bb=state.brandBasics;
+    body = `<div class="card"><div class="card-pad">
+      <div class="flex-between mb3">
+        <span class="badge ${STAGE_BADGE[ct.flywheelStage]}">${ct.flywheelStage}</span>
+        <span class="font-mono" style="font-size:10px;color:var(--muted-foreground-2)">In progress</span>
+      </div>
+      <h3 class="font-heading" style="font-size:17px;font-weight:600;margin-bottom:2px">${esc(ct.label)}</h3>
+      <p style="font-size:12.5px;color:var(--muted-foreground);margin-bottom:12px">${esc(bb.brandName||"Untitled brand")} · ${copy.durationLabel} · $${copy.price}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-default btn-sm" onclick="go('brief','${sku}')">Resume brief</button>
+        <button class="btn btn-outline btn-sm" onclick="go('plan','${sku}')">View plan</button>
+        <button class="btn btn-outline btn-sm" onclick="go('pay','${sku}')">Review &amp; pay</button>
+      </div>
+    </div></div>`;
+  } else {
+    body = `<div class="card"><div class="card-pad" style="text-align:center;padding:36px 20px">
+      <div class="font-heading" style="font-size:16px;font-weight:600;margin-bottom:6px">No campaigns yet</div>
+      <p style="font-size:12.5px;color:var(--muted-foreground);margin-bottom:16px">Pick a campaign to start your first sprint — it'll show up here so you can pick up where you left off.</p>
+      <button class="btn btn-default" onclick="go('start')">Browse campaigns →</button>
+    </div></div>`;
+  }
+  app.innerHTML = `<div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+    <div class="section-head"><div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Workspace</div><h1>My Campaigns</h1><p>Campaigns you've started in this browser. Data is saved locally.</p></div>
+    ${body}
+  </div>`;
+}
+function renderClientPortal(){
+  const bb=state.brandBasics, tc=state.targetCustomer;
+  const rows = [["Brand name",bb.brandName],["Website",bb.website],["Market",(MARKET_OPTIONS.find(m=>m.value===bb.country)||{}).label],["Industry",(INDUSTRY_LIST.find(i=>i.id===bb.industry)||{}).name],["What the brand does",bb.whatBrandDoes],["ICP",tc.icpDescription],["Competitors",tc.competitors]];
+  const filled = rows.filter(r=>r[1]);
+  const profile = filled.length ? filled.map(([k,v])=>`<div class="order-row" style="align-items:flex-start"><span class="text-muted" style="flex:none;width:150px">${esc(k)}</span><span style="text-align:right;flex:1">${esc(v)}</span></div>`).join("")
+    : `<p style="font-size:12.5px;color:var(--muted-foreground)">No brand profile yet. Fill in a campaign brief and your details appear here.</p>`;
+  app.innerHTML = `<div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+    <div class="section-head"><div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Client portal</div><h1>Your brand profile</h1><p>The Brand Intelligence details on file — reused across every campaign you run.</p></div>
+    <div class="card"><div class="card-pad">${profile}</div></div>
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:18px;margin-top:18px">
+      <button class="btn btn-outline" onclick="go('start')">← Back to campaigns</button>
+      ${state.selectedSku?`<button class="btn btn-outline btn-sm" onclick="go('brief','${state.selectedSku}')">Edit details</button>`:""}
+    </div>
+  </div>`;
+}
+function renderAdmin(){
+  const roleCount = new Set(Object.values(PLAN_DETAILS).flatMap(p=>p.humanPod.map(r=>r.role))).size;
+  const tiles = [["5","Campaign types"],["$499","Fixed price"],["4 wks","Sprint length"],[roleCount+"","Pod roles"]];
+  app.innerHTML = `<div class="wrap-narrow" style="padding-top:36px;padding-bottom:48px">
+    <div class="section-head"><div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Internal · Admin</div><h1>Operations overview</h1><p>Internal control panel (read-only snapshot in this demo). The full app manages freelancers, vendors, templates, and settings.</p></div>
+    <div class="stats mb6">${tiles.map(t=>`<div class="stat"><div class="v">${t[0]}</div><div class="l">${t[1]}</div></div>`).join("")}</div>
+    <div class="card"><div class="card-pad">
+      <div class="mono-label" style="font-size:9.5px;color:var(--muted-foreground);margin-bottom:10px">Campaign catalogue</div>
+      ${Object.keys(CAMPAIGN_TYPES).map(id=>{const ct=CAMPAIGN_TYPES[id],copy=FLOW_COPY[id];return `<div class="order-row"><span>${esc(ct.label)} <span class="text-muted-2" style="font-size:11px">· ${ct.flywheelStage}</span></span><span class="font-mono">$${copy.price}</span></div>`;}).join("")}
+    </div></div>
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:18px;margin-top:18px">
+      <button class="btn btn-outline" onclick="go('start')">← Back to site</button>
+    </div>
+  </div>`;
+}
+
 /* Boot — restore from hash if present */
 (function boot(){
   const h = location.hash.replace(/^#/,"");
   const [screen, slug] = h.split("/");
   if (slug && SLUG_TO_SKU[slug]) state.selectedSku = SLUG_TO_SKU[slug];
   if (["brief","plan","pay"].includes(screen) && state.selectedSku) go(screen);
+  else if (["faq","campaigns","portal","admin"].includes(screen)) go(screen);
   else renderStart();
 })();
 </script>
