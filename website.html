@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClarityHQ Campaign Marketplace</title>
+<meta name="description" content="Internal discussion demo — buy a growth pod, configured and priced end to end." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ---------------------------------------------------------------------------
+   Design tokens — ported verbatim from app/globals.css
+--------------------------------------------------------------------------- */
+:root {
+  --background: #1c1712;
+  --foreground: #ece7dd;
+  --card: #26201a;
+  --card-foreground: #ece7dd;
+  --border: #3a3229;
+  --border-strong: #4d4235;
+  --paper: #f4f1e8;
+  --paper-border: #ddd5c4;
+  --paper-foreground: #1c1712;
+  --muted: #241e18;
+  --muted-foreground: #a89f8f;
+  --muted-foreground-2: #837a68;
+  --primary: #d1a02e;
+  --primary-hover: #b8871c;
+  --primary-foreground: #1c1712;
+  --secondary: #7a8455;
+  --secondary-foreground: #1c1712;
+  --destructive: #b0553a;
+  --destructive-foreground: #f4f1e8;
+  --ring: #d1a02e;
+  --radius: 0.5rem;
+  --radius-card: 1.25rem;
+  --font-heading: "Fraunces";
+  --font-sans: "Plus Jakarta Sans";
+  --font-mono: "IBM Plex Mono";
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+::selection { background: var(--primary); color: var(--primary-foreground); }
+a { color: inherit; text-decoration: none; }
+main { flex: 1; }
+
+.font-heading { font-family: var(--font-heading), ui-sans-serif, sans-serif; }
+.font-mono { font-family: var(--font-mono), ui-monospace, monospace; }
+.mono-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.dim { color: var(--muted-foreground); font-weight: inherit; }
+
+/* Alternating page sections */
+.section-dark { background: var(--background); color: var(--foreground); }
+.section-paper {
+  --background: var(--paper);
+  --foreground: var(--paper-foreground);
+  --card: #ffffff;
+  --card-foreground: var(--paper-foreground);
+  --muted: #ece6d8;
+  --muted-foreground: #6b6353;
+  --muted-foreground-2: #8a8272;
+  --border: var(--paper-border);
+  --border-strong: #cabfa8;
+  background: var(--background);
+  color: var(--foreground);
+}
+.wrap { margin: 0 auto; max-width: 1180px; padding-left: 16px; padding-right: 16px; }
+.wrap-narrow { margin: 0 auto; max-width: 768px; padding-left: 16px; padding-right: 16px; }
+.rounded-top { border-top-left-radius: 2.5rem; border-top-right-radius: 2.5rem; margin-top: -2rem; position: relative; }
+
+/* ---- Header ---- */
+header.site {
+  position: sticky; top: 0; z-index: 50;
+  border-bottom: 1px solid rgba(58,50,41,0.6);
+  background: rgba(28,23,18,0.95);
+  backdrop-filter: blur(6px);
+}
+header .bar { display: flex; height: 56px; max-width: 1180px; margin: 0 auto; align-items: center; gap: 12px; padding: 0 16px; }
+.logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--foreground); }
+.logo .disc { display: grid; height: 24px; width: 24px; place-items: center; border-radius: 9999px; background: rgba(209,160,46,0.15); border: 1px solid rgba(209,160,46,0.4); }
+.logo .disc span { height: 8px; width: 8px; border-radius: 9999px; background: var(--primary); }
+.pill-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 9999px; background: rgba(209,160,46,0.1); border: 1px solid rgba(209,160,46,0.25); color: var(--primary); }
+header .nav { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+header .nav a.link { font-size: 12.5px; font-weight: 500; color: var(--muted-foreground); transition: color .15s; }
+header .nav a.link:hover { color: var(--foreground); }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  white-space: nowrap; border-radius: 9999px; font-size: 12.5px; font-weight: 600;
+  transition: background-color .15s, color .15s, border-color .15s, opacity .15s;
+  cursor: pointer; border: 1px solid transparent; height: 36px; padding: 8px 16px;
+  font-family: inherit;
+}
+.btn:disabled { pointer-events: none; opacity: 0.5; }
+.btn-default { background: var(--foreground); color: var(--background); }
+.btn-default:hover { opacity: 0.9; }
+.btn-accent { background: var(--primary); color: var(--primary-foreground); }
+.btn-accent:hover { background: var(--primary-hover); }
+.btn-outline { border: 1px solid var(--border-strong); background: transparent; color: inherit; }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 10px; }
+.btn-lg { height: 44px; padding: 0 24px; font-size: 12px; }
+
+/* ---- Cards ---- */
+.card { border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); color: var(--card-foreground); }
+.card-pad { padding: 20px; }
+.card-pad-top { padding: 20px 20px 20px; }
+.bg-paper { background: var(--paper); border-color: var(--paper-border); color: var(--paper-foreground); }
+
+/* ---- Badges ---- */
+.badge { display: inline-flex; align-items: center; border-radius: 3px; border: 1px solid; padding: 2px 8px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; }
+.badge-amber { background: rgba(209,160,46,0.1); color: var(--primary); border-color: rgba(209,160,46,0.3); }
+.badge-sage { background: rgba(122,132,85,0.12); color: var(--secondary); border-color: rgba(122,132,85,0.3); }
+.badge-coral { background: rgba(176,85,58,0.12); color: var(--destructive); border-color: rgba(176,85,58,0.3); }
+
+/* text helpers */
+.text-primary { color: var(--primary); }
+.text-primary-hover { color: var(--primary-hover); }
+.text-secondary { color: var(--secondary); }
+.text-destructive { color: var(--destructive); }
+.text-muted { color: var(--muted-foreground); }
+.text-muted-2 { color: var(--muted-foreground-2); }
+
+/* Screen 1 layout */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 640px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+.stat { border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); padding: 12px 16px; text-align: center; }
+.stat .v { font-family: var(--font-heading); font-size: 20px; font-weight: 600; color: var(--primary); }
+.stat .l { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+
+.flywheel-grid { display: grid; grid-template-columns: 1fr; align-items: center; gap: 32px; }
+@media (min-width: 1024px) { .flywheel-grid { grid-template-columns: 380px 1fr; } }
+.flywheel-diagram { margin: 0 auto; width: 100%; max-width: 320px; }
+.tiles { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+.tile { border-radius: var(--radius-card); border: 1px solid; background: var(--card); padding: 16px; }
+
+.group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid; }
+.sku-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 640px) { .sku-grid.two { grid-template-columns: repeat(2, 1fr); } }
+.sku-grid.one { max-width: 384px; }
+.sku-card { display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); padding: 20px; transition: border-color .15s; cursor: pointer; }
+.sku-card:hover { border-color: rgba(209,160,46,0.5); }
+.sku-card h3 { font-family: var(--font-heading); font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.sku-card .desc { font-size: 13px; color: var(--muted-foreground); line-height: 1.4; margin-bottom: 10px; }
+.sku-card .goal { font-size: 11.5px; font-weight: 500; color: var(--primary-hover); margin-bottom: 12px; }
+.sku-card .chans { font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground-2); margin-bottom: 20px; }
+.sku-card .foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px; }
+.sku-card .price { font-family: var(--font-heading); font-size: 18px; font-weight: 600; color: var(--foreground); }
+.sku-card .start { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--primary); transition: transform .15s; }
+.sku-card:hover .start { transform: translateX(2px); }
+
+.quiz-cta { margin-top: 32px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 16px; border-radius: var(--radius-card); border: 1px solid var(--border-strong); background: var(--card); padding: 20px; }
+@media (min-width: 640px) { .quiz-cta { flex-direction: row; align-items: center; } }
+
+/* Forms */
+label.fld { display: block; font-size: 11.5px; font-weight: 600; color: var(--foreground); margin-bottom: 5px; }
+label.fld .req { color: var(--destructive); }
+input.inp, textarea.inp, select.inp {
+  width: 100%; border-radius: var(--radius); border: 1px solid var(--border-strong);
+  background: var(--muted); color: var(--foreground); padding: 8px 10px; font-size: 13px;
+  font-family: inherit; transition: border-color .15s; outline: none;
+}
+input.inp:focus, textarea.inp:focus, select.inp:focus { border-color: var(--primary); }
+textarea.inp { min-height: 70px; resize: vertical; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .grid2 { grid-template-columns: repeat(2, 1fr); } }
+.brief-section { border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); padding: 18px; }
+.brief-section > .bs-title { font-family: var(--font-heading); font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.brief-section > .bs-help { font-size: 11px; color: var(--muted-foreground-2); margin-bottom: 12px; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.pill { border-radius: 9999px; border: 1px solid var(--border-strong); background: transparent; color: var(--muted-foreground); padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; }
+.pill:hover { border-color: var(--primary); color: var(--foreground); }
+.pill.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+
+.sticky-foot { position: sticky; bottom: 0; z-index: 40; border-top: 1px solid var(--border); background: rgba(28,23,18,0.92); backdrop-filter: blur(8px); }
+.sticky-foot .inner { display: flex; max-width: 768px; margin: 0 auto; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; }
+
+.section-head { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.section-head h1 { font-family: var(--font-heading); font-size: 24px; font-weight: 600; }
+.section-head p { font-size: 13px; color: var(--muted-foreground); margin-top: 4px; }
+
+/* Plan */
+.plan-block { margin-bottom: 16px; }
+.plan-block > .lbl { font-family: var(--font-mono); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; font-size: 9.5px; color: var(--muted-foreground); margin-bottom: 12px; }
+.week-card { border-radius: var(--radius-card); border: 1px solid var(--border); background: var(--card); overflow: hidden; margin-bottom: 12px; }
+.week-card .wh { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--muted); padding: 8px 16px; }
+.week-card .wh span { font-family: var(--font-heading); font-size: 13px; font-weight: 600; }
+.week-card .wb { padding: 12px 16px; font-size: 12px; color: var(--muted-foreground); line-height: 1.4; }
+.pod-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 640px) { .pod-grid { grid-template-columns: repeat(2, 1fr); } }
+.pod-row { display: flex; align-items: center; justify-content: space-between; border-radius: 4px; border-left: 2px solid var(--primary); background: var(--paper); padding: 10px 12px; }
+.pod-row .role { font-size: 12.5px; font-weight: 600; color: var(--paper-foreground); }
+.pod-row .hrs { font-family: var(--font-mono); font-size: 11px; color: #8a8272; }
+.metric-chip { font-family: var(--font-mono); font-size: 10px; padding: 4px 8px; border-radius: 9999px; background: rgba(209,160,46,0.1); color: var(--primary); border: 1px solid rgba(209,160,46,0.3); }
+
+/* Pay */
+.summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 640px) { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
+.summary-grid .k { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted-foreground-2); margin-bottom: 2px; }
+.summary-grid .v { font-size: 13px; font-weight: 600; }
+.deliv { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; margin-bottom: 6px; }
+.check { flex: none; margin-top: 2px; color: var(--secondary); }
+.order-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+.order-total { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 6px; font-size: 14px; font-weight: 600; }
+.trust { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 16px; font-size: 10.5px; color: var(--muted-foreground-2); }
+@media (min-width: 640px) { .pay-btns { flex-direction: row !important; } }
+
+.hidden { display: none !important; }
+.mb2 { margin-bottom: 8px; } .mb3 { margin-bottom: 12px; } .mb4 { margin-bottom: 16px; } .mb6 { margin-bottom: 24px; }
+.mt3 { margin-top: 12px; } .mt4 { margin-top: 16px; }
+.py14 { padding-top: 56px; padding-bottom: 56px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.footer-note { text-align: center; padding: 40px 16px; font-size: 11px; color: var(--muted-foreground-2); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="bar">
+    <a href="#" class="logo" onclick="go('start');return false;">
+      <span class="disc"><span></span></span>
+      ClarityHQ
+    </a>
+    <span class="pill-tag">Campaign Marketplace</span>
+    <div class="nav">
+      <a class="link" href="#" onclick="alert('My Campaigns — workspace listing (prototype)');return false;">My Campaigns</a>
+      <a class="link" href="#" onclick="alert('Client Portal (prototype)');return false;">Client Portal</a>
+      <a class="link" href="#" onclick="alert('Admin panel (prototype)');return false;">Admin</a>
+      <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us</a>
+    </div>
+  </div>
+</header>
+
+<main id="app"><!-- screens render here --></main>
+
+<div class="footer-note">
+  campaign.clarityhq.ai · Internal discussion demo — all data is illustrative and stored locally in your browser.
+</div>
+
+<script>
+/* ===========================================================================
+   Data — ported from lib/data (campaign-types, campaign-flow-copy,
+   campaign-plan-details, campaign-brief-fields, industry-benchmarks)
+=========================================================================== */
+const CAMPAIGN_TYPES = {
+  social:      { id:"social",      label:"Social Organic",         stage:"Acquisition" },
+  content:     { id:"content",     label:"Content-Led (SEO/AEO)",  stage:"Acquisition" },
+  abm:         { id:"abm",         label:"Outbound Sales",         stage:"Conversion" },
+  performance: { id:"performance", label:"Performance Marketing",  stage:"Conversion" },
+  retention:   { id:"retention",   label:"Customer Retention",     stage:"Retention" },
+};
+
+const FLOW_COPY = {
+  social: {
+    description:"Platform-native content that builds compounding audience and demand — without ad spend.",
+    goalLine:"Follower growth, brand presence, organic reach",
+    channels:["Instagram","LinkedIn","X (Twitter)","YouTube"],
+    price:499, durationLabel:"4-week sprint",
+    deliverables:["Brand Intelligence content brief with BCP","4-week content calendar","16–20 branded posts (carousels, reels, statics)","Caption copy for all posts","Hashtag and distribution strategy","Performance summary report"],
+    podSize:6,
+  },
+  content: {
+    description:"Authoritative content that ranks on search engines and AI answer engines. Compounds over time.",
+    goalLine:"Organic search traffic, AI engine visibility, domain authority",
+    channels:["Blog","LinkedIn","Google","AI Engines"],
+    price:499, durationLabel:"4-week sprint",
+    deliverables:["Keyword research + AEO topic map","4–8 long-form articles (800–1,500 words each)","Meta titles and descriptions for all pieces","LinkedIn distribution post per article","Google Search Console submission","Performance tracking setup"],
+    podSize:6,
+  },
+  abm: {
+    description:"Multi-touch outreach to a named account book — email, LinkedIn, WhatsApp. Meetings in your calendar.",
+    goalLine:"Qualified sales conversations, pipeline generation, meetings booked",
+    channels:["Email","LinkedIn","WhatsApp","Smartlead"],
+    price:499, durationLabel:"4-week sprint",
+    deliverables:["ICP definition and buyer signals map","Verified contact list (500 contacts)","3-touch multi-channel sequence (email + LinkedIn + WhatsApp)","Smartlead campaign setup and warmup","Reply management and meeting booking","Sprint performance report"],
+    podSize:6,
+  },
+  performance: {
+    description:"Paid media on Meta and Google, built on your brand ICP and voice. Tuned to a target ROAS from week one.",
+    goalLine:"Revenue, ROAS, qualified traffic, lead generation",
+    channels:["Meta Ads","Google Search","Google Display","YouTube Ads"],
+    price:499, durationLabel:"4-week sprint",
+    deliverables:["Audience strategy and targeting map","15 ad creatives (static + video)","Campaign structure and ad set architecture","A/B testing framework","Daily performance monitoring (28 days)","ROAS and revenue performance report"],
+    podSize:6,
+  },
+  retention: {
+    description:"Behavioural email and WhatsApp flows that protect revenue you've already earned and extend customer LTV.",
+    goalLine:"Repeat purchase rate, LTV increase, churn reduction",
+    channels:["Email Flows","WhatsApp","Klaviyo / HubSpot / Mailchimp"],
+    price:499, durationLabel:"4-week sprint",
+    deliverables:["Lifecycle audit and gap analysis","RFM customer segmentation","3–6 automated email flows (5–10 emails each)","WhatsApp broadcast scripts (if selected)","Platform setup and trigger configuration","Revenue attribution report (day 28)"],
+    podSize:6,
+  },
+};
+
+const SKU_TO_SLUG = { abm:"outbound-sales", social:"social-organic", content:"content-led", performance:"performance-marketing", retention:"customer-retention" };
+const SLUG_TO_SKU = Object.fromEntries(Object.entries(SKU_TO_SLUG).map(([k,v])=>[v,k]));
+
+const PLAN_DETAILS = {
+  social: {
+    weeklyProcess:[
+      {week:1,title:"Intelligence & Audit",description:"Brand X-Ray → ICP mapping, competitor audit, content strategy"},
+      {week:2,title:"Content Architecture",description:"Content pillars, template design, copy framework, hook development"},
+      {week:3,title:"Production & Schedule",description:"Asset creation, caption writing, content calendar, review & approve"},
+      {week:4,title:"Publish & Optimise",description:"Go live, engagement monitoring, performance review, next sprint plan"},
+    ],
+    humanPod:[{role:"Campaign Lead",hours:8},{role:"Social Media Strategist",hours:5},{role:"Copywriter",hours:10},{role:"Graphic Designer",hours:10},{role:"Video Editor",hours:10},{role:"Brand QA",hours:4}],
+    kpi:{IN:"+200–500 followers, 20,000–60,000 reach, 3.5–5.5% engagement rate.",US:"+100–300 followers, 10,000–25,000 reach, 2–4% engagement."},
+  },
+  content: {
+    weeklyProcess:[
+      {week:1,title:"Keyword & Topic Intelligence",description:"Keyword research, AEO topic mapping, competitor content audit"},
+      {week:2,title:"Content Planning",description:"Article outlines, internal linking strategy, SEO structure"},
+      {week:3,title:"Content Production",description:"Articles written, meta copy, schema markup, images & formatting"},
+      {week:4,title:"Publish & Index",description:"Content live, submit to Google Search Console, LinkedIn distribution, tracking"},
+    ],
+    humanPod:[{role:"Campaign Lead",hours:8},{role:"SEO Strategist",hours:5},{role:"Content Writer (×2)",hours:20},{role:"AEO Specialist",hours:6},{role:"Brand QA",hours:4}],
+    kpi:{IN:"4–8 articles published, 500–3,000 impressions/month by week 8, Page 1 ranking for 2–3 target keywords, featured in 3–5 AI answer engine responses.",US:"4–8 articles published, 500–3,000 impressions/month by week 8, Page 1 ranking for 2–3 target keywords, featured in 3–5 AI answer engine responses."},
+  },
+  abm: {
+    weeklyProcess:[
+      {week:1,title:"ICP & List Build",description:"ICP definition, account sourcing, contact verification, CRM setup"},
+      {week:2,title:"Sequence Build",description:"Outreach copy (3 touches), LinkedIn profile, WhatsApp scripts, Smartlead setup"},
+      {week:3,title:"Campaign Live",description:"Day 0 sends, reply handling, follow-up sequencing, meeting booking"},
+      {week:4,title:"Optimise & Report",description:"A/B analysis, reply classification, pipeline report, subsequence setup"},
+    ],
+    humanPod:[{role:"Campaign Lead",hours:8},{role:"Outbound Strategist",hours:8},{role:"Copywriter (B2B)",hours:10},{role:"List Builder",hours:12},{role:"SDR / Inbox Manager",hours:16},{role:"CRM Setup",hours:4}],
+    kpi:{IN:"45–60% open rate, 3–6% reply rate, 8–20 meetings booked.",US:"35–50% open rate, 2–4% reply rate, 5–15 meetings booked."},
+  },
+  performance: {
+    weeklyProcess:[
+      {week:1,title:"Intelligence & Creative Brief",description:"ICP mapping, audience build, creative brief, landing page review"},
+      {week:2,title:"Creative Production",description:"Ad creatives (static + video), copy variants, A/B testing framework"},
+      {week:3,title:"Campaign Launch",description:"Ads live, budget pacing, daily monitoring, optimisation signals"},
+      {week:4,title:"Optimise & Scale",description:"A/B results, winning creative scaling, ROAS report, sprint 2 recommendations"},
+    ],
+    humanPod:[{role:"Campaign Lead",hours:8},{role:"Paid Media Strategist",hours:12},{role:"Ad Copywriter",hours:8},{role:"Creative Designer",hours:12},{role:"Media Buyer",hours:10},{role:"Analytics & Reporting",hours:6}],
+    kpi:{IN:"$500 budget: ~12,000–18,000 impressions, ~250–400 clicks, 5–10 conversions, CPA $50–100.",US:"$500 budget: ~3,000–6,000 impressions, ~60–120 clicks, 1–3 conversions, CPA $150–500."},
+  },
+  retention: {
+    weeklyProcess:[
+      {week:1,title:"Lifecycle Audit & Strategy",description:"Flow audit, segment mapping, lifecycle stage definition, revenue leakage analysis"},
+      {week:2,title:"Flow Architecture & Copy",description:"Email flow structure, WhatsApp scripts, copy per flow, design brief"},
+      {week:3,title:"Build & Test",description:"Flows built in platform, QA all triggers, A/B subject lines, test sends"},
+      {week:4,title:"Launch & Monitor",description:"Flows live, trigger monitoring, open/click/revenue tracking, report"},
+    ],
+    humanPod:[{role:"Campaign Lead",hours:8},{role:"Lifecycle Strategist",hours:8},{role:"Email Copywriter",hours:14},{role:"WhatsApp Script Writer",hours:6},{role:"Platform Builder",hours:12},{role:"QA & Analytics",hours:6}],
+    kpi:{IN:"35–55% email open rate, 4–8% click rate, +15–25% repeat purchase rate, 2–5× campaign cost in recovered revenue within 90 days.",US:"35–55% email open rate, 4–8% click rate, +15–25% repeat purchase rate, 2–5× campaign cost in recovered revenue within 90 days."},
+  },
+};
+const GENERIC_KPI_NOTE = "Benchmarks for this market are being calibrated — ask your account lead for current ranges.";
+
+const CAMPAIGN_SPECIFIC_FIELDS = {
+  social:[
+    {id:"priority_platform",label:"Which platform matters most?",type:"select",options:[{value:"instagram",label:"Instagram"},{value:"linkedin",label:"LinkedIn"},{value:"x",label:"X (Twitter)"},{value:"youtube",label:"YouTube"},{value:"no_preference",label:"No preference"}]},
+    {id:"content_tone",label:"Tone of voice",type:"text",placeholder:"e.g. playful, expert, premium"},
+    {id:"posting_frequency",label:"Preferred posting frequency",type:"select",options:[{value:"3_week",label:"3x / week"},{value:"5_week",label:"5x / week"},{value:"daily",label:"Daily"}]},
+  ],
+  content:[
+    {id:"target_keywords",label:"Target keywords or topics",type:"textarea",placeholder:"What should we rank for?"},
+    {id:"existing_blog_url",label:"Existing blog URL (if any)",type:"text",placeholder:"https://"},
+    {id:"content_frequency",label:"Articles per month you'd like",type:"select",options:[{value:"2",label:"2 articles"},{value:"4",label:"4 articles"},{value:"8",label:"8 articles"}]},
+  ],
+  abm:[
+    {id:"target_titles",label:"Target job titles / personas",type:"text",placeholder:"e.g. VP Marketing, Head of Growth"},
+    {id:"deal_size",label:"Average deal size ($)",type:"number"},
+    {id:"account_list_source",label:"Do you have an account list already?",type:"select",options:[{value:"have_list",label:"Yes, I have a list"},{value:"need_sourcing",label:"No, source it for me"}]},
+  ],
+  performance:[
+    {id:"ad_platform_preference",label:"Preferred ad platform",type:"select",options:[{value:"meta",label:"Meta"},{value:"google",label:"Google"},{value:"both",label:"Both"},{value:"no_preference",label:"No preference"}]},
+    {id:"landing_page_url",label:"Landing page URL",type:"text",placeholder:"https://"},
+    {id:"target_cpa_roas",label:"Target CPA or ROAS (if known)",type:"text"},
+  ],
+  retention:[
+    {id:"current_esp",label:"Current email/CRM platform",type:"text",placeholder:"e.g. Klaviyo, HubSpot, Mailchimp"},
+    {id:"list_size",label:"Customer list size",type:"number"},
+    {id:"repeat_purchase_rate",label:"Current repeat purchase rate (if known)",type:"text",placeholder:"e.g. 18%"},
+  ],
+};
+
+const MARKET_OPTIONS = [
+  {value:"IN",label:"India"},{value:"US",label:"United States"},{value:"AE",label:"UAE"},{value:"UK",label:"United Kingdom"},{value:"SG",label:"Singapore"},
+];
+const INDUSTRY_LIST = [
+  {id:"d2c",name:"D2C / E-commerce"},{id:"saas",name:"SaaS / B2B Tech"},{id:"fmcg",name:"FMCG / Consumer"},
+  {id:"fnb",name:"F&B / Hospitality"},{id:"finance",name:"Finance / Fintech"},{id:"health",name:"Health / Wellness"},
+  {id:"edu",name:"Education / EdTech"},{id:"realestate",name:"Real Estate"},
+];
+const PRIMARY_GOAL_OPTIONS = [
+  {value:"awareness",label:"Awareness"},{value:"lead_gen",label:"Lead gen"},{value:"direct_sales",label:"Direct sales"},{value:"retention",label:"Retention"},{value:"pipeline",label:"Pipeline"},
+];
+const PRESET_OPTIONS = [
+  {value:"standard",label:"Standard — $499"},{value:"growth",label:"Growth — $499 + ad spend"},{value:"custom",label:"Custom"},
+];
+
+const FLYWHEEL_GROUPS = [
+  {stage:"Acquisition",label:"ACQUISITION",cls:"text-primary",border:"rgba(209,160,46,0.3)",skus:["social","content"]},
+  {stage:"Conversion",label:"CONVERSION",cls:"text-secondary",border:"rgba(122,132,85,0.3)",skus:["abm","performance"]},
+  {stage:"Retention",label:"RETENTION",cls:"text-destructive",border:"rgba(176,85,58,0.3)",skus:["retention"]},
+];
+const STAGE_BADGE = { Acquisition:"badge-amber", Conversion:"badge-sage", Retention:"badge-coral" };
+
+const FLYWHEEL_TILES = [
+  {label:"Acquisition",cls:"text-primary",border:"rgba(209,160,46,0.3)",body:"Build the audience and demand that don't exist yet — organic content, SEO, and AI-answer visibility."},
+  {label:"Conversion",cls:"text-secondary",border:"rgba(122,132,85,0.3)",body:"Turn attention into pipeline and revenue — outbound sales and performance media."},
+  {label:"Retention",cls:"text-destructive",border:"rgba(176,85,58,0.3)",body:"Protect and extend the revenue you've already earned — behavioural lifecycle flows."},
+];
+
+/* ===========================================================================
+   App state — mirrors lib/store/start-flow-store.ts (persisted to localStorage)
+=========================================================================== */
+const STORE_KEY = "clarity-start-flow";
+const defaultState = () => ({
+  selectedSku:null, preset:"standard",
+  brandBasics:{ brandName:"", website:"", country:"", industry:"", whatBrandDoes:"" },
+  targetCustomer:{ icpDescription:"", problemSolved:"", competitors:"" },
+  campaignSpecific:{}, budget:{ adSpendBudget:"", cadence:"monthly" }, primaryGoal:"",
+});
+let state = load();
+function load(){ try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem(STORE_KEY)||"{}")); } catch(e){ return defaultState(); } }
+function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){} }
+
+const esc = (s) => String(s==null?"":s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const app = document.getElementById("app");
+
+/* Router */
+function go(screen, sku){
+  if (sku) { state.selectedSku = sku; save(); }
+  window.scrollTo(0,0);
+  if (screen === "start") renderStart();
+  else if (screen === "brief") renderBrief();
+  else if (screen === "plan") renderPlan();
+  else if (screen === "pay") renderPay();
+  location.hash = screen + (state.selectedSku ? "/"+SKU_TO_SLUG[state.selectedSku] : "");
+}
+
+/* ---------------------------------------------------------------------------
+   Flywheel SVG — ported from components/flywheel-diagram.tsx
+--------------------------------------------------------------------------- */
+function flywheelSVG(){
+  const SIZE=580, C=290, CENTER_R=98, TICK_IN=118, TICK_OUT=132, CREAM_R=140, INNER_R=146, OUTER_R=210, MID_R=178, RING_R=252, GAP=14, ARC=360/3-GAP, TIP=7;
+  const polar=(r,a)=>{const rad=((a-90)*Math.PI)/180;return {x:C+r*Math.cos(rad),y:C+r*Math.sin(rad)};};
+  const f=p=>`${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+  const band=(a0,a1)=>{const o0=polar(OUTER_R,a0),o1=polar(OUTER_R,a1),tip=polar(MID_R,a1+TIP),i1=polar(INNER_R,a1),i0=polar(INNER_R,a0),large=a1-a0>180?1:0;
+    return [`M ${f(o0)}`,`A ${OUTER_R} ${OUTER_R} 0 ${large} 1 ${f(o1)}`,`L ${f(tip)}`,`L ${f(i1)}`,`A ${INNER_R} ${INNER_R} 0 ${large} 0 ${f(i0)}`,"Z"].join(" ");};
+  const labelPath=(a0,a1,flip)=>{const[s,e]=flip?[a1,a0]:[a0,a1];const sweep=flip?0:1;return `M ${f(polar(MID_R,s))} A ${MID_R} ${MID_R} 0 0 ${sweep} ${f(polar(MID_R,e))}`;};
+  const STAGES=[{key:"acquisition",label:"ACQUISITION",start:240,fill:"#aeb98d",stroke:"#7f8f5f"},{key:"conversion",label:"CONVERSION",start:0,fill:"#d3a3a3",stroke:"#b57e7e"},{key:"retention",label:"RETENTION",start:120,fill:"#9aa7b6",stroke:"#75849a"}];
+  let defs="";
+  STAGES.forEach(s=>{const end=s.start+ARC,mid=((s.start+end)/2)%360,flip=mid>90&&mid<270;defs+=`<path id="fw-${s.key}" d="${labelPath(s.start+8,end-8,flip)}" fill="none"/>`;});
+  let ticks=""; for(let i=0;i<48;i++){const a=i*7.5,p1=polar(TICK_IN,a),p2=polar(TICK_OUT,a);ticks+=`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#e0d3ad" stroke-width="1"/>`;}
+  let dots=""; for(let i=0;i<16;i++){const p=polar(i%2===0?110:128,i*22.5+11);dots+=`<circle cx="${p.x}" cy="${p.y}" r="2.2" opacity="0.75" fill="${i%2===0?'#d1a02e':'#d3a3a3'}"/>`;}
+  let orbit=""; for(let i=0;i<8;i++){const p=polar(RING_R,i*45+10);orbit+=`<circle cx="${p.x}" cy="${p.y}" r="3.2" fill="#d1a02e"/>`;}
+  const bands=STAGES.map(s=>`<path d="${band(s.start,s.start+ARC)}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1" stroke-linejoin="round"/>`).join("");
+  const labels=STAGES.map(s=>`<text font-family="var(--font-mono)" font-size="19" font-weight="700" letter-spacing="4" fill="#ffffff"><textPath href="#fw-${s.key}" startOffset="50%" text-anchor="middle" dominant-baseline="middle">${s.label}</textPath></text>`).join("");
+  return `<svg viewBox="0 0 ${SIZE} ${SIZE}" width="100%" height="100%" role="img" aria-label="Brand Intelligence flywheel: Acquisition, Conversion, Retention">
+    <defs><style>@keyframes fw-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}.fw-orbit{transform-origin:${C}px ${C}px;animation:fw-spin 40s linear infinite}@media (prefers-reduced-motion:reduce){.fw-orbit{animation:none}}</style>${defs}</defs>
+    <circle cx="${C}" cy="${C}" r="${RING_R}" fill="none" stroke="#c9c2b2" stroke-width="1"/>
+    <g class="fw-orbit">${orbit}</g>
+    <circle cx="${C}" cy="${C}" r="${CREAM_R}" fill="#faf6ea" stroke="#e6dcc2" stroke-width="1"/>
+    ${ticks}${dots}${bands}${labels}
+    <circle cx="${C}" cy="${C}" r="${CENTER_R}" fill="#14110d"/>
+    <text x="${C}" y="${C-38}" text-anchor="middle" font-size="20" fill="#d1a02e">✦</text>
+    <text x="${C}" y="${C-4}" text-anchor="middle" font-family="var(--font-heading)" font-size="19" font-weight="700" letter-spacing="1" fill="#f4f1e8">BRAND</text>
+    <text x="${C}" y="${C+22}" text-anchor="middle" font-family="var(--font-heading)" font-size="19" font-weight="700" letter-spacing="1" fill="#f4f1e8">INTELLIGENCE</text>
+    <text x="${C}" y="${C+50}" text-anchor="middle" font-family="var(--font-mono)" font-size="10" letter-spacing="2" fill="#8a8272">EVERY TURN, SMARTER</text>
+  </svg>`;
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 1 — /start (Campaign Selection)
+--------------------------------------------------------------------------- */
+function renderStart(){
+  const stats=[{v:"$499",l:"fixed"},{v:"3 days",l:"to live"},{v:"5",l:"campaign types"},{v:"0",l:"retainers needed"}];
+  const groups = FLYWHEEL_GROUPS.map(g=>{
+    const cards = g.skus.map(id=>{
+      const ct=CAMPAIGN_TYPES[id], copy=FLOW_COPY[id];
+      return `<div class="sku-card" onclick="go('brief','${id}')">
+        <div>
+          <div class="flex-between mb3">
+            <span class="badge ${STAGE_BADGE[ct.stage]}">${ct.stage}</span>
+            <span class="font-mono" style="font-size:10px;color:var(--muted-foreground-2)">${copy.durationLabel}</span>
+          </div>
+          <h3>${esc(ct.label)}</h3>
+          <p class="desc">${esc(copy.description)}</p>
+          <p class="goal">↗ ${esc(copy.goalLine)}</p>
+          <p class="chans">${copy.channels.map(esc).join(" · ")}</p>
+        </div>
+        <div class="foot">
+          <span class="price">$${copy.price}</span>
+          <span class="start">Start →</span>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div>
+      <div class="group-head" style="border-color:${g.border}">
+        <span class="mono-label ${g.cls}" style="font-size:9px">${g.label}</span>
+      </div>
+      <div class="sku-grid ${g.skus.length===1?"one":"two"}">${cards}</div>
+    </div>`;
+  }).join("");
+
+  const tiles = FLYWHEEL_TILES.map(t=>`<div class="tile" style="border-color:${t.border}">
+    <div class="mono-label ${t.cls}" style="font-size:9px;margin-bottom:6px">${t.label}</div>
+    <p style="font-size:12px;color:var(--muted-foreground);line-height:1.3">${esc(t.body)}</p>
+  </div>`).join("");
+
+  app.innerHTML = `
+  <section class="section-paper">
+    <div class="wrap" style="padding-top:56px;padding-bottom:56px">
+      <div style="max-width:640px;margin-bottom:32px">
+        <div class="mono-label text-primary" style="font-size:10px;margin-bottom:8px">campaign.clarityhq.ai</div>
+        <h1 class="font-heading" style="font-size:30px;font-weight:600;letter-spacing:-0.02em;margin-bottom:12px;line-height:1.15">One campaign. Built right. <span class="dim">Live in under a week.</span></h1>
+        <p style="font-size:13.5px;color:var(--muted-foreground);line-height:1.6">Every campaign is grounded in your Brand Intelligence Layer — your brand book, ICP, and channel voice.</p>
+      </div>
+      <div class="stats">${stats.map(s=>`<div class="stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join("")}</div>
+    </div>
+  </section>
+
+  <section class="section-dark rounded-top">
+    <div class="wrap py14">
+      <div class="mb6">
+        <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">How it works</div>
+        <h2 class="font-heading" style="font-size:20px;font-weight:600">Acquisition <span class="dim">→ Conversion → Retention</span></h2>
+      </div>
+      <div class="flywheel-grid">
+        <div class="flywheel-diagram">${flywheelSVG()}</div>
+        <div class="tiles">${tiles}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-paper rounded-top">
+    <div class="wrap py14">
+      <div class="mb6">
+        <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Choose your campaign</div>
+        <h2 class="font-heading" style="font-size:20px;font-weight:600;margin-bottom:4px">Five campaigns. <span class="dim">One fixed price.</span></h2>
+        <p style="font-size:12.5px;color:var(--muted-foreground);max-width:640px">Every card maps to a stage of the flywheel above. Pick one — the whole card is the start button.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:32px">${groups}</div>
+
+      <div class="quiz-cta">
+        <div class="mono-label" style="font-size:10px;color:var(--muted-foreground)">Not sure which campaign you need?</div>
+        <div style="display:flex;gap:8px;flex:none;align-items:center">
+          <button class="btn btn-default btn-sm" onclick="alert('Campaign recommendation quiz — 10 questions + readiness scoring (prototype)')">Take the quiz</button>
+          <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us instead</a>
+        </div>
+      </div>
+      <div class="mt3" style="text-align:center">
+        <a href="#" onclick="alert('FAQ page (prototype)');return false;" style="font-size:11px;color:var(--muted-foreground-2);text-decoration:underline;text-underline-offset:2px">Questions? Read the FAQ</a>
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 2 — /start/brief (5-minute intake)
+--------------------------------------------------------------------------- */
+function renderBrief(){
+  const sku = state.selectedSku;
+  if (!sku){ return go("start"); }
+  const ct=CAMPAIGN_TYPES[sku], copy=FLOW_COPY[sku];
+  const bb=state.brandBasics, tc=state.targetCustomer;
+
+  const presetPills = PRESET_OPTIONS.map(o=>`<button class="pill ${state.preset===o.value?"active":""}" onclick="setPreset('${o.value}')">${esc(o.label)}</button>`).join("");
+  const presetHelp = state.preset==="growth"
+    ? `<p style="margin-top:8px;font-size:11px;color:var(--muted-foreground-2)">Growth pairs the $499 campaign fee with a media budget you set in the Budget section below.</p>`
+    : state.preset==="custom"
+    ? `<p style="margin-top:8px;font-size:11px;color:var(--muted-foreground-2)">We'll tailor scope to your needs — add specifics in the fields below and we'll follow up.</p>` : "";
+
+  const marketOpts = `<option value="">Select…</option>` + MARKET_OPTIONS.map(m=>`<option value="${m.value}" ${bb.country===m.value?"selected":""}>${esc(m.label)}</option>`).join("");
+  const indOpts = `<option value="">Select…</option>` + INDUSTRY_LIST.map(i=>`<option value="${i.id}" ${bb.industry===i.id?"selected":""}>${esc(i.name)}</option>`).join("");
+
+  const specific = CAMPAIGN_SPECIFIC_FIELDS[sku].map(fld=>{
+    const val = state.campaignSpecific[fld.id] ?? "";
+    if (fld.type==="select"){
+      const opts = `<option value="">Select…</option>` + fld.options.map(o=>`<option value="${o.value}" ${val===o.value?"selected":""}>${esc(o.label)}</option>`).join("");
+      return `<div><label class="fld">${esc(fld.label)}</label><select class="inp" onchange="setSpecific('${fld.id}',this.value)">${opts}</select></div>`;
+    }
+    if (fld.type==="textarea"){
+      return `<div><label class="fld">${esc(fld.label)}</label><textarea class="inp" placeholder="${esc(fld.placeholder||"")}" oninput="setSpecific('${fld.id}',this.value)">${esc(val)}</textarea></div>`;
+    }
+    return `<div><label class="fld">${esc(fld.label)}</label><input class="inp" type="${fld.type}" placeholder="${esc(fld.placeholder||"")}" value="${esc(val)}" oninput="setSpecific('${fld.id}',this.value)"></div>`;
+  }).join("");
+
+  const goalPills = PRIMARY_GOAL_OPTIONS.map(o=>`<button class="pill ${state.primaryGoal===o.value?"active":""}" onclick="setGoal('${o.value}')">${esc(o.label)}</button>`).join("");
+
+  app.innerHTML = `
+  <div class="wrap-narrow" style="padding-top:40px;padding-bottom:112px">
+    <div class="section-head">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Campaign brief — 5 minute intake</div>
+      <h1>${esc(ct.label)}</h1>
+      <p>${esc(copy.description)}</p>
+    </div>
+
+    <div class="mb6">
+      <label class="fld">Preset</label>
+      <div class="pills">${presetPills}</div>
+      ${presetHelp}
+    </div>
+
+    <div id="brief-error"></div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="brief-section">
+        <div class="bs-title">Brand basics</div>
+        <div class="grid2">
+          <div><label class="fld">Brand name <span class="req">*</span></label><input class="inp" value="${esc(bb.brandName)}" oninput="setBrand('brandName',this.value)"></div>
+          <div><label class="fld">Website</label><input class="inp" placeholder="https://" value="${esc(bb.website)}" oninput="setBrand('website',this.value)"></div>
+          <div><label class="fld">Country / market <span class="req">*</span></label><select class="inp" onchange="setBrand('country',this.value)">${marketOpts}</select></div>
+          <div><label class="fld">Industry <span class="req">*</span></label><select class="inp" onchange="setBrand('industry',this.value)">${indOpts}</select></div>
+        </div>
+        <div class="mt3"><label class="fld">What does the brand do?</label><textarea class="inp" placeholder="A couple sentences is enough" oninput="setBrand('whatBrandDoes',this.value)">${esc(bb.whatBrandDoes)}</textarea></div>
+      </div>
+
+      <div class="brief-section">
+        <div class="bs-title">Target customer</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><label class="fld">ICP description</label><textarea class="inp" placeholder="Who are we trying to reach?" oninput="setTarget('icpDescription',this.value)">${esc(tc.icpDescription)}</textarea></div>
+          <div><label class="fld">Problem solved</label><textarea class="inp" placeholder="What problem does this solve for them?" oninput="setTarget('problemSolved',this.value)">${esc(tc.problemSolved)}</textarea></div>
+          <div><label class="fld">Competitors</label><input class="inp" placeholder="Who else are they considering?" value="${esc(tc.competitors)}" oninput="setTarget('competitors',this.value)"></div>
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="bs-title">${esc(ct.label)} — campaign specifics</div>
+        <div class="grid2">${specific}</div>
+      </div>
+
+      <div class="brief-section">
+        <div class="bs-title">Budget</div>
+        <div class="bs-help">Optional ad spend / media budget — separate from the $499 campaign fee.</div>
+        <div class="grid2">
+          <div><label class="fld">Ad spend / media budget ($)</label><input class="inp" type="number" value="${esc(state.budget.adSpendBudget)}" oninput="setBudget('adSpendBudget',this.value)"></div>
+          <div><label class="fld">Cadence</label><select class="inp" onchange="setBudget('cadence',this.value)">
+            <option value="monthly" ${state.budget.cadence==="monthly"?"selected":""}>Monthly</option>
+            <option value="onetime" ${state.budget.cadence==="onetime"?"selected":""}>One-time / sprint total</option>
+          </select></div>
+        </div>
+      </div>
+
+      <div class="brief-section">
+        <div class="bs-title">Primary goal</div>
+        <div class="pills">${goalPills}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sticky-foot">
+    <div class="inner">
+      <button class="btn btn-outline" onclick="go('start')">Back</button>
+      <div style="text-align:center">
+        <div style="font-size:12.5px;font-weight:600;color:var(--foreground)">${esc(ct.label)}</div>
+        <div class="font-mono" style="font-size:10px;color:var(--muted-foreground-2)">$${copy.price} · ${copy.durationLabel}</div>
+      </div>
+      <button class="btn btn-default" onclick="buildPlan()">Build my plan →</button>
+    </div>
+  </div>`;
+}
+
+function buildPlan(){
+  const bb=state.brandBasics;
+  const missing = [ !bb.brandName.trim()&&"Brand name", !bb.country&&"Country", !bb.industry&&"Industry" ].filter(Boolean);
+  const err=document.getElementById("brief-error");
+  if (missing.length){
+    err.innerHTML = `<div class="card mb4" style="border-color:rgba(176,85,58,0.4)"><div class="card-pad" style="font-size:12.5px;color:var(--destructive)">Please fill in: ${missing.join(", ")} before continuing.</div></div>`;
+    err.scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  go("plan");
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 3 — /start/plan (auto-generated plan)
+--------------------------------------------------------------------------- */
+function renderPlan(){
+  const sku=state.selectedSku;
+  if(!sku){ return go("start"); }
+  const ct=CAMPAIGN_TYPES[sku], copy=FLOW_COPY[sku], pd=PLAN_DETAILS[sku];
+  const bb=state.brandBasics;
+  const marketLabel = (MARKET_OPTIONS.find(m=>m.value===bb.country)||{}).label;
+  const industryLabel = (INDUSTRY_LIST.find(i=>i.id===bb.industry)||{}).name;
+  const kpiText = (bb.country==="IN"||bb.country==="US") ? pd.kpi[bb.country] : GENERIC_KPI_NOTE;
+
+  const weeks = pd.weeklyProcess.map(s=>`<div class="week-card">
+    <div class="wh"><span>Week ${s.week} — ${esc(s.title)}</span></div>
+    <div class="wb">${esc(s.description)}</div>
+  </div>`).join("");
+
+  const totalHours = pd.humanPod.reduce((a,r)=>a+r.hours,0);
+  const pod = pd.humanPod.map(r=>`<div class="pod-row"><span class="role">${esc(r.role)}</span><span class="hrs">${r.hours} hrs</span></div>`).join("");
+  const metrics = copy.goalLine.split(", ").map(m=>`<span class="metric-chip">${esc(m)}</span>`).join("");
+
+  app.innerHTML = `
+  <div class="wrap-narrow" style="padding-top:40px;padding-bottom:40px">
+    <div class="section-head">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Your plan</div>
+      <h1>${esc(ct.label)}</h1>
+      <p>Auto-generated from your brief — ${copy.durationLabel}, ${copy.podSize} specialists.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="plan-block">
+        <div class="lbl">Sprint timeline</div>
+        ${weeks}
+      </div>
+
+      <div class="plan-block">
+        <div class="lbl">Human Pod</div>
+        <div class="card bg-paper">
+          <div class="card-pad">
+            <div class="pod-grid">${pod}</div>
+            <div class="mt3" style="text-align:right;font-family:var(--font-mono);font-size:11px;color:#6b6353">${totalHours} hrs total</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="plan-block">
+        <div class="lbl">Expected results</div>
+        <div class="card">
+          <div class="card-pad">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${metrics}</div>
+            <p style="font-size:13px;color:var(--foreground);line-height:1.6">${esc(kpiText)}</p>
+            <p style="margin-top:12px;font-size:10.5px;color:var(--muted-foreground-2)">Based on ${esc(industryLabel||"your")} benchmarks for ${esc(marketLabel||"your")} market. Actual results vary.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:20px;margin-top:24px">
+      <button class="btn btn-outline" onclick="go('brief')">← Edit brief</button>
+      <button class="btn btn-default" onclick="go('pay')">Review & proceed →</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------------------------------------------------------------------
+   Screen 4 — /start/pay (review & pay)
+--------------------------------------------------------------------------- */
+function renderPay(){
+  const sku=state.selectedSku;
+  if(!sku){ return go("start"); }
+  const ct=CAMPAIGN_TYPES[sku], copy=FLOW_COPY[sku];
+  const bb=state.brandBasics;
+  const marketLabel=(MARKET_OPTIONS.find(m=>m.value===bb.country)||{}).label;
+  const industryLabel=(INDUSTRY_LIST.find(i=>i.id===bb.industry)||{}).name;
+  const adSpend = Number(state.budget.adSpendBudget)||0;
+  const total = copy.price + adSpend;
+
+  const deliv = copy.deliverables.map(d=>`<div class="deliv"><span class="check">✓</span><span>${esc(d)}</span></div>`).join("");
+  const summary = [
+    ["Campaign",ct.label],["Brand",bb.brandName||"—"],["Market",marketLabel||"—"],
+    ["Industry",industryLabel||"—"],["Sprint",copy.durationLabel],["Pod size",copy.podSize+" specialists"],
+  ].map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+
+  const adRow = adSpend>0 ? `<div class="order-row"><span>Ad spend (${state.budget.cadence==="monthly"?"monthly":"one-time"})</span><span class="font-mono">$${adSpend.toLocaleString()}</span></div>` : "";
+  const adNote = adSpend>0 ? `<p style="margin-top:8px;font-size:10.5px;color:var(--muted-foreground-2)">Ad spend is billed separately by the ad platforms — only the $${copy.price} campaign fee is charged today.</p>` : "";
+
+  app.innerHTML = `
+  <div class="wrap-narrow" style="padding-top:40px;padding-bottom:40px">
+    <div class="section-head">
+      <div class="mono-label text-primary" style="font-size:10px;margin-bottom:4px">Review & pay</div>
+      <h1>${esc(ct.label)}</h1>
+      <p>${esc(copy.description)}</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card bg-paper">
+        <div class="card-pad">
+          <div class="mono-label" style="font-size:9.5px;color:var(--primary-hover);margin-bottom:12px">Campaign summary</div>
+          <div class="summary-grid">${summary}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-pad">
+          <div class="mono-label" style="font-size:9.5px;color:var(--muted-foreground);margin-bottom:12px">Deliverables</div>
+          ${deliv}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-pad">
+          <div class="mono-label" style="font-size:9.5px;color:var(--muted-foreground);margin-bottom:12px">Order summary</div>
+          <div class="order-row"><span>Campaign</span><span class="font-mono">$${copy.price}</span></div>
+          <div class="order-row text-muted"><span>Human Pod</span><span class="font-mono">Included</span></div>
+          <div class="order-row text-muted"><span>Brand Intel</span><span class="font-mono">Included</span></div>
+          ${adRow}
+          <div class="order-total"><span>Total</span><span class="font-mono">$${total.toLocaleString()}</span></div>
+          ${adNote}
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px" class="pay-btns">
+        <button class="btn btn-default btn-lg" style="flex:1" onclick="payNow()">Pay $${copy.price} — Start campaign →</button>
+        <a href="https://meetings-na2.hubspot.com/virat-mohan" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">Talk to us instead</a>
+      </div>
+      <p style="text-align:center;font-size:10.5px;color:var(--muted-foreground-2)">Cards (Visa, Mastercard, Amex), plus UPI / net banking for India-based clients — via Stripe.</p>
+
+      <div class="card" style="background:rgba(36,30,24,0.4)">
+        <div class="card-pad" style="padding:16px">
+          <div class="mono-label" style="font-size:9px;color:var(--muted-foreground);margin-bottom:8px">Need something changed first?</div>
+          <textarea id="change-req" class="inp" placeholder="Tell us what to adjust before you pay…" oninput="onChangeReq(this.value)"></textarea>
+          <div class="mt3" style="display:flex;align-items:center;gap:12px">
+            <button id="change-btn" class="btn btn-outline btn-sm" disabled onclick="requestChanges()">Request changes</button>
+            <span id="change-sent" class="font-mono hidden" style="font-size:10.5px;color:var(--secondary)">Sent to hello@clarityhq.ai</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="trust">
+        <span>Secure checkout via Stripe</span><span>·</span>
+        <span>Campaign starts within a week — you'll hear from us in 48 hours</span><span>·</span>
+        <span>Human Pod assigned on payment</span><span>·</span>
+        <span>Full refund if you cancel within 48 hours, before your Campaign Lead is assigned</span>
+      </div>
+
+      <div class="flex-between" style="border-top:1px solid var(--border);padding-top:16px">
+        <button class="btn btn-outline" onclick="go('brief')">← Edit brief</button>
+        <span class="font-mono" style="font-size:10.5px;color:var(--muted-foreground-2)">hello@clarityhq.ai</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+let _changeReq="";
+function onChangeReq(v){ _changeReq=v; document.getElementById("change-btn").disabled = !v.trim(); }
+function requestChanges(){
+  const ct=CAMPAIGN_TYPES[state.selectedSku];
+  const subject=encodeURIComponent(`Change request — ${ct.label}${state.brandBasics.brandName?` (${state.brandBasics.brandName})`:""}`);
+  const body=encodeURIComponent(_changeReq||"(no details provided)");
+  window.location.href=`mailto:hello@clarityhq.ai?subject=${subject}&body=${body}`;
+  document.getElementById("change-sent").classList.remove("hidden");
+}
+function payNow(){
+  const copy=FLOW_COPY[state.selectedSku];
+  alert(`Stripe checkout (placeholder)\n\nThis would redirect to a Stripe Payment Link to charge $${copy.price} for the ${CAMPAIGN_TYPES[state.selectedSku].label} campaign.\n\nSee lib/payments/stripe-links.ts — real links to be swapped in.`);
+}
+
+/* State setters */
+function setPreset(v){ state.preset=v; save(); renderBrief(); }
+function setBrand(k,v){ state.brandBasics[k]=v; save(); }
+function setTarget(k,v){ state.targetCustomer[k]=v; save(); }
+function setSpecific(id,v){ state.campaignSpecific[id]=v; save(); }
+function setBudget(k,v){ state.budget[k]=v; save(); }
+function setGoal(v){ state.primaryGoal = (state.primaryGoal===v?"":v); save(); renderBrief(); }
+
+/* Boot — restore from hash if present */
+(function boot(){
+  const h = location.hash.replace(/^#/,"");
+  const [screen, slug] = h.split("/");
+  if (slug && SLUG_TO_SKU[slug]) state.selectedSku = SLUG_TO_SKU[slug];
+  if (["brief","plan","pay"].includes(screen) && state.selectedSku) go(screen);
+  else renderStart();
+})();
+</script>
+</body>
+</html>
