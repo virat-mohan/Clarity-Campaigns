@@ -16,8 +16,11 @@ import { goToStripe } from "@/lib/payments/stripe-links";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TalkToUsCta } from "@/components/talk-to-us-cta";
+import { TermsModal } from "@/components/terms-modal";
 import { CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const SUPPORT_EMAIL = "hello@clarityhq.ai";
 
@@ -31,12 +34,14 @@ function PayPageContent() {
   const budget = useStartFlowStore((s) => s.budget);
   const duration = useStartFlowStore((s) => s.duration);
   const setSelectedSku = useStartFlowStore((s) => s.setSelectedSku);
+  const setDuration = useStartFlowStore((s) => s.setDuration);
   const quizAnswers = useQuizStore((s) => s.answers);
 
   const sku = (typeParam ? SLUG_TO_SKU[typeParam] : undefined) ?? selectedSku ?? undefined;
 
   const [changeRequest, setChangeRequest] = useState("");
   const [changeRequestSent, setChangeRequestSent] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (!sku) {
@@ -95,6 +100,40 @@ function PayPageContent() {
       </div>
 
       <div className="flex flex-col gap-4">
+        <Card>
+          <CardContent className="pt-5">
+            <div className="font-mono-label mb-3 text-[9.5px] text-primary">Commit & save</div>
+            <div className="grid grid-cols-3 gap-2.5">
+              {([1, 2, 3] as const).map((n) => {
+                const price = bundlePrice(n);
+                const active = duration === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setDuration(n)}
+                    className={cn(
+                      "flex flex-col items-center gap-0.5 rounded-[var(--radius-card)] border border-border-strong bg-card px-2 py-3 transition-colors hover:border-primary",
+                      active && "border-primary bg-primary/[0.08]"
+                    )}
+                  >
+                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+                      {n} month{n > 1 ? "s" : ""}
+                    </span>
+                    <span className={cn("font-heading text-lg font-semibold", active && "text-primary")}>
+                      ${price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-secondary">{DURATION_DISCOUNT_LABEL[n]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground-2">
+              Commit to more months and save — the discount applies to the full bundle, billed today.
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="pt-5">
             <div className="font-mono-label mb-3 text-[9.5px] text-primary">Campaign summary</div>
@@ -201,8 +240,22 @@ function PayPageContent() {
           </CardContent>
         </Card>
 
+        <label className="flex items-start gap-2 text-[12px] text-muted-foreground">
+          <Checkbox
+            checked={agreedToTerms}
+            onCheckedChange={(v) => setAgreedToTerms(v === true)}
+            className="mt-0.5"
+          />
+          I have read and agree to the <TermsModal />
+        </label>
+
         <div className="flex flex-col gap-2.5 sm:flex-row">
-          <Button size="lg" className="flex-1" onClick={() => goToStripe(sku)}>
+          <Button
+            size="lg"
+            className="flex-1"
+            disabled={!agreedToTerms}
+            onClick={() => goToStripe(sku)}
+          >
             Pay ${campaignPrice.toLocaleString()} — Start campaign →
           </Button>
           <TalkToUsCta variant="inline" />

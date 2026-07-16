@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CAMPAIGN_TYPES } from "@/lib/data/campaign-types";
@@ -17,6 +17,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Info, X } from "lucide-react";
 
 const TALK_TO_US = "https://meetings-na2.hubspot.com/virat-mohan";
 
@@ -41,6 +42,25 @@ function BriefPageContent() {
   const markBriefSubmitted = useStartFlowStore((s) => s.markBriefSubmitted);
 
   const [showErrors, setShowErrors] = useState(false);
+  const [showDiscountInfo, setShowDiscountInfo] = useState(false);
+  const discountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setShowDiscountInfo(true);
+    const timer = setTimeout(() => setShowDiscountInfo(false), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!showDiscountInfo) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (discountRef.current && !discountRef.current.contains(e.target as Node)) {
+        setShowDiscountInfo(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDiscountInfo]);
 
   useEffect(() => {
     if (!sku) {
@@ -96,7 +116,53 @@ function BriefPageContent() {
         </div>
 
         <div className="mb-6 flex items-baseline justify-between">
-          <span className="font-heading text-base font-semibold">${copy.price} flat</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-heading text-base font-semibold">${copy.price} flat</span>
+            <span className="relative inline-flex" ref={discountRef}>
+              <button
+                type="button"
+                onClick={() => setShowDiscountInfo((v) => !v)}
+                className="text-muted-foreground-2 transition-colors hover:text-primary"
+                aria-label="Multi-month discount details"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+              {showDiscountInfo && (
+              <div className="absolute bottom-[calc(100%+10px)] left-0 z-50 w-72 rounded-xl border border-paper-border bg-paper p-3.5 text-paper-foreground shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+                <div className="absolute -bottom-1.5 left-2 h-3 w-3 rotate-45 border-b border-r border-paper-border bg-paper" />
+                <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-paper-border pb-2">
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-primary-hover">
+                    Save with a longer plan
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowDiscountInfo(false)}
+                    aria-label="Dismiss"
+                    className="text-paper-foreground/50 hover:text-paper-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-start gap-2 text-[12px] leading-[1.4]">
+                    <span className="mt-px flex-shrink-0 font-bold text-secondary">✓</span>
+                    <span>
+                      If you take a <span className="font-semibold">2-month</span> subscription, you will get a{" "}
+                      <span className="font-semibold">15% discount</span>.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 text-[12px] leading-[1.4]">
+                    <span className="mt-px flex-shrink-0 font-bold text-secondary">✓</span>
+                    <span>
+                      If you take a <span className="font-semibold">3-month</span> subscription, you will get a{" "}
+                      <span className="font-semibold">20% discount</span>.
+                    </span>
+                  </div>
+                </div>
+              </div>
+              )}
+            </span>
+          </div>
           <span className="text-[11px] text-muted-foreground-2">
             One plan, everything included
             {isPerformance ? " — ad spend billed separately below" : ""}

@@ -8,16 +8,11 @@ import { CAMPAIGN_FLOW_COPY, SLUG_TO_SKU } from "@/lib/data/campaign-flow-copy";
 import { CAMPAIGN_PLAN_DETAILS, GENERIC_KPI_BENCHMARK_NOTE } from "@/lib/data/campaign-plan-details";
 import { MARKET_OPTIONS } from "@/lib/data/campaign-brief-fields";
 import { IND, type IndustryId } from "@/lib/data/industry-benchmarks";
-import { bundlePrice, DURATION_DISCOUNT_LABEL } from "@/lib/data/bundle-pricing";
 import { useStartFlowStore } from "@/lib/store/start-flow-store";
-import { useQuizStore } from "@/lib/store/quiz-store";
-import { getStartFlowRoadmap } from "@/lib/scoring/recommendation-engine";
-import { CAMPAIGN_ID_TO_SKU, SKU_TO_CAMPAIGN_ID } from "@/lib/quiz/campaign-sku-map";
 import { PlanTimeline } from "@/components/start/plan-timeline";
 import { PlanPodGrid } from "@/components/start/plan-pod-grid";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 function PlanPageContent() {
   const router = useRouter();
@@ -26,10 +21,7 @@ function PlanPageContent() {
 
   const selectedSku = useStartFlowStore((s) => s.selectedSku);
   const brandBasics = useStartFlowStore((s) => s.brandBasics);
-  const duration = useStartFlowStore((s) => s.duration);
   const setSelectedSku = useStartFlowStore((s) => s.setSelectedSku);
-  const setDuration = useStartFlowStore((s) => s.setDuration);
-  const quizAnswers = useQuizStore((s) => s.answers);
 
   const sku = (typeParam ? SLUG_TO_SKU[typeParam] : undefined) ?? selectedSku ?? undefined;
 
@@ -59,11 +51,6 @@ function PlanPageContent() {
       ? planDetails?.kpiBenchmarks[brandBasics.country]
       : GENERIC_KPI_BENCHMARK_NOTE;
 
-  const roadmap = useMemo(() => {
-    if (!sku) return [];
-    return getStartFlowRoadmap(quizAnswers, SKU_TO_CAMPAIGN_ID[sku]).slice(0, duration);
-  }, [quizAnswers, sku, duration]);
-
   if (!sku || !ct || !copy || !planDetails) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center text-[13px] text-muted-foreground">
@@ -86,91 +73,7 @@ function PlanPageContent() {
 
       <div className="flex flex-col gap-4">
         <div>
-          <div className="font-mono-label mb-3 text-[9.5px] text-muted-foreground">Duration</div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {([1, 2, 3] as const).map((n) => {
-              const price = bundlePrice(n);
-              const active = duration === n;
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setDuration(n)}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-[var(--radius-card)] border border-border-strong bg-card px-2 py-3 transition-colors hover:border-primary",
-                    active && "border-primary bg-primary/[0.08]"
-                  )}
-                >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                    {n} month{n > 1 ? "s" : ""}
-                  </span>
-                  <span
-                    className={cn(
-                      "font-heading text-lg font-semibold",
-                      active && "text-primary"
-                    )}
-                  >
-                    ${price.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] text-secondary">{DURATION_DISCOUNT_LABEL[n]}</span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-[11px] text-muted-foreground-2">
-            Commit to more months and save — the discount applies to the full bundle, billed today.
-          </p>
-        </div>
-
-        <div>
-          <div className="font-mono-label mb-3 text-[9.5px] text-muted-foreground">
-            Your roadmap{duration > 1 ? ` — ${duration} months` : ""}
-          </div>
-          <Card>
-            <CardContent className="p-3 pt-3">
-              {roadmap.map((step) => {
-                const rsku = CAMPAIGN_ID_TO_SKU[step.campaign];
-                const rct = CAMPAIGN_TYPES[rsku];
-                const rcopy = CAMPAIGN_FLOW_COPY[rsku];
-                const isCurrent = rsku === sku;
-                return (
-                  <div
-                    key={`${step.monthLabel}-${step.campaign}`}
-                    className="flex gap-3 border-b border-border px-1 py-2.5 last:border-b-0"
-                  >
-                    <div
-                      className={cn(
-                        "w-[68px] flex-shrink-0 pt-0.5 font-mono text-[10px] font-semibold text-muted-foreground",
-                        isCurrent && "text-primary-hover"
-                      )}
-                    >
-                      {step.monthLabel}
-                    </div>
-                    <div>
-                      <div className="mb-0.5 text-[13px] font-semibold text-foreground">
-                        {rct.label}
-                        {isCurrent && (
-                          <span className="ml-1.5 align-middle rounded bg-primary/12 px-1.5 py-px font-mono text-[8.5px] font-bold uppercase tracking-[0.05em] text-primary-hover">
-                            this plan
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11.5px] leading-[1.4] text-muted-foreground">{rcopy.description}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div>
-          <div className="font-mono-label mb-3 text-[9.5px] text-muted-foreground">
-            Sprint timeline{" "}
-            <span className="font-normal normal-case tracking-normal text-muted-foreground-2">
-              — Month 1: {ct.label}
-            </span>
-          </div>
+          <div className="font-mono-label mb-3 text-[9.5px] text-muted-foreground">Sprint timeline</div>
           <PlanTimeline steps={planDetails.weeklyProcess} />
         </div>
 
@@ -180,7 +83,7 @@ function PlanPageContent() {
             <CardContent className="pt-5">
               <PlanPodGrid pod={planDetails.humanPod} />
               <div className="mt-3 text-right font-mono text-[11px] text-muted-foreground">
-                {totalHours} hrs total{duration > 1 ? " · Month 1 only" : ""}
+                {totalHours} hrs total
               </div>
             </CardContent>
           </Card>

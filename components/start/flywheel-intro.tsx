@@ -5,19 +5,19 @@ const TILES = [
     key: "acquisition",
     label: "Acquisition",
     colorClass: "text-primary",
-    body: "Build the audience and demand that don't exist yet — organic content, SEO, and AI-answer visibility.",
+    body: "Build awareness and demand with content, SEO, and outreach that attract your ideal audience.",
   },
   {
     key: "conversion",
     label: "Conversion",
     colorClass: "text-secondary",
-    body: "Turn attention into pipeline and revenue — outbound sales and performance media.",
+    body: "Turn interest into pipeline with offers, landing pages, and outbound sales that convert.",
   },
   {
     key: "retention",
     label: "Retention",
     colorClass: "text-destructive",
-    body: "Protect and extend the revenue you've already earned — behavioural lifecycle flows.",
+    body: "Protect revenue and expand it with onboarding, retention flows, and customer lifecycle campaigns.",
   },
 ];
 

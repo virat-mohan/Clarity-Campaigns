@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+.terms-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.terms-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.terms-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 8px;
+}
+
 :root {
   /* page chrome — warm brown-black (clarityhq dark sections) */
   --background: #1c1712;
