@@ -1,0 +1,170 @@
+{
+  "$schema_note": "Single source of truth for the recommendation engine. Add a new campaign by adding its id to `campaigns`, its flywheel stage to `flywheelStage`, and a weight for it under every question option below. No code changes required.",
+
+  "campaigns": [
+    "performance_marketing",
+    "outbound_sales",
+    "social_organic",
+    "seo_aeo",
+    "customer_retention"
+  ],
+
+  "flywheelStage": {
+    "social_organic": "acquisition",
+    "seo_aeo": "acquisition",
+    "performance_marketing": "conversion",
+    "outbound_sales": "conversion",
+    "customer_retention": "retention"
+  },
+
+  "questions": {
+    "primary_goal": {
+      "label": "Primary Business Goal",
+      "type": "single",
+      "options": {
+        "increase_revenue": { "performance_marketing": 10, "customer_retention": 6, "outbound_sales": 5, "seo_aeo": 2, "social_organic": 1 },
+        "generate_more_leads": { "outbound_sales": 10, "performance_marketing": 6, "seo_aeo": 4, "social_organic": 2, "customer_retention": 0 },
+        "launch_new_product": { "performance_marketing": 8, "social_organic": 7, "seo_aeo": 3, "outbound_sales": 4, "customer_retention": 2 },
+        "increase_brand_awareness": { "social_organic": 10, "seo_aeo": 5, "performance_marketing": 3, "outbound_sales": 1, "customer_retention": 1 },
+        "grow_organic_traffic": { "seo_aeo": 10, "social_organic": 6, "performance_marketing": 2, "customer_retention": 1, "outbound_sales": 1 },
+        "increase_repeat_purchases": { "customer_retention": 10, "performance_marketing": 5, "social_organic": 3, "seo_aeo": 2, "outbound_sales": 0 },
+        "reduce_cac": { "seo_aeo": 8, "customer_retention": 7, "performance_marketing": 5, "social_organic": 3, "outbound_sales": 2 },
+        "improve_conversion_rate": { "performance_marketing": 8, "customer_retention": 5, "seo_aeo": 4, "outbound_sales": 2, "social_organic": 1 }
+      }
+    },
+
+    "business_type": {
+      "label": "Business Type",
+      "type": "single",
+      "options": {
+        "d2c": { "performance_marketing": 8, "customer_retention": 8, "social_organic": 6, "seo_aeo": 5, "outbound_sales": 2 },
+        "b2b_services": { "outbound_sales": 10, "seo_aeo": 6, "performance_marketing": 5, "social_organic": 2, "customer_retention": 2 },
+        "saas": { "outbound_sales": 9, "seo_aeo": 8, "performance_marketing": 5, "customer_retention": 4, "social_organic": 2 },
+        "marketplace": { "performance_marketing": 8, "seo_aeo": 5, "customer_retention": 5, "social_organic": 3, "outbound_sales": 4 },
+        "hospitality": { "performance_marketing": 8, "social_organic": 8, "customer_retention": 7, "seo_aeo": 3, "outbound_sales": 1 },
+        "healthcare": { "seo_aeo": 8, "performance_marketing": 6, "outbound_sales": 5, "customer_retention": 4, "social_organic": 2 },
+        "retail": { "performance_marketing": 9, "customer_retention": 8, "social_organic": 5, "seo_aeo": 5, "outbound_sales": 1 }
+      }
+    },
+
+    "business_stage": {
+      "label": "Business Stage",
+      "type": "single",
+      "options": {
+        "startup": { "social_organic": 6, "seo_aeo": 5, "performance_marketing": 4, "outbound_sales": 3, "customer_retention": 1 },
+        "growing": { "performance_marketing": 8, "outbound_sales": 6, "seo_aeo": 6, "customer_retention": 5, "social_organic": 4 },
+        "scaling": { "performance_marketing": 9, "customer_retention": 8, "outbound_sales": 7, "seo_aeo": 6, "social_organic": 5 },
+        "enterprise": { "outbound_sales": 9, "customer_retention": 9, "performance_marketing": 8, "seo_aeo": 7, "social_organic": 5 }
+      }
+    },
+
+    "biggest_challenge": {
+      "label": "Biggest Challenge",
+      "type": "single",
+      "options": {
+        "not_enough_visitors": { "seo_aeo": 9, "performance_marketing": 8, "social_organic": 7, "outbound_sales": 2, "customer_retention": 0 },
+        "visitors_dont_convert": { "performance_marketing": 10, "customer_retention": 6, "seo_aeo": 2, "outbound_sales": 2, "social_organic": 1 },
+        "leads_dont_respond": { "outbound_sales": 10, "performance_marketing": 3, "seo_aeo": 1, "customer_retention": 0, "social_organic": 1 },
+        "sales_cycle_too_long": { "outbound_sales": 9, "customer_retention": 5, "performance_marketing": 4, "seo_aeo": 2, "social_organic": 1 },
+        "customers_dont_return": { "customer_retention": 10, "performance_marketing": 3, "seo_aeo": 1, "social_organic": 2, "outbound_sales": 0 },
+        "organic_traffic_poor": { "seo_aeo": 10, "social_organic": 5, "performance_marketing": 2, "customer_retention": 0, "outbound_sales": 1 },
+        "ads_not_profitable": { "performance_marketing": 9, "customer_retention": 5, "seo_aeo": 4, "social_organic": 1, "outbound_sales": 1 }
+      }
+    },
+
+    "marketing_experience": {
+      "label": "Marketing Experience",
+      "type": "single",
+      "options": {
+        "never": { "social_organic": 5, "seo_aeo": 5, "performance_marketing": 5 },
+        "agency": { "performance_marketing": 3, "customer_retention": 3, "outbound_sales": 3 },
+        "in_house": {}
+      }
+    },
+
+    "monthly_budget": {
+      "label": "Monthly Budget",
+      "type": "single",
+      "options": {
+        "below_500": { "seo_aeo": 8, "social_organic": 8, "customer_retention": 5, "performance_marketing": 1, "outbound_sales": 1 },
+        "500_2k": { "performance_marketing": 5, "seo_aeo": 5, "customer_retention": 5, "social_organic": 5, "outbound_sales": 3 },
+        "2k_5k": { "performance_marketing": 8, "outbound_sales": 6, "customer_retention": 6, "seo_aeo": 5, "social_organic": 0 },
+        "5k_20k": {
+          "_note": "NOT specified in the source spec — it jumps from $2k-$5k straight to Above $20k. These are interpolated (midpoint of the two neighbouring tiers). Please confirm real numbers with whoever wrote the spec.",
+          "performance_marketing": 9, "outbound_sales": 7, "customer_retention": 6, "seo_aeo": 5, "social_organic": 0
+        },
+        "above_20k": { "performance_marketing": 10, "outbound_sales": 8, "customer_retention": 7, "seo_aeo": 6, "social_organic": 0 }
+      }
+    },
+
+    "timeline": {
+      "label": "Timeline",
+      "type": "single",
+      "options": {
+        "immediate": { "performance_marketing": 10, "outbound_sales": 7, "customer_retention": 4, "seo_aeo": 1, "social_organic": 2 },
+        "30_days": { "performance_marketing": 8, "outbound_sales": 6, "customer_retention": 5, "seo_aeo": 0, "social_organic": 0 },
+        "90_days": { "seo_aeo": 7, "social_organic": 5, "customer_retention": 5, "performance_marketing": 4, "outbound_sales": 0 },
+        "long_term": { "seo_aeo": 10, "social_organic": 8, "customer_retention": 6, "performance_marketing": 0, "outbound_sales": 0 }
+      }
+    },
+
+    "primary_kpi": {
+      "label": "Primary KPI",
+      "type": "single",
+      "options": {
+        "revenue": { "performance_marketing": 10, "customer_retention": 7, "outbound_sales": 5, "seo_aeo": 0, "social_organic": 0 },
+        "roas": { "performance_marketing": 10, "outbound_sales": 0, "seo_aeo": 0, "social_organic": 0, "customer_retention": 0 },
+        "pipeline": { "outbound_sales": 10, "performance_marketing": 0, "seo_aeo": 0, "social_organic": 0, "customer_retention": 0 },
+        "traffic": { "seo_aeo": 10, "social_organic": 6, "performance_marketing": 0, "outbound_sales": 0, "customer_retention": 0 },
+        "followers": { "social_organic": 10, "performance_marketing": 0, "outbound_sales": 0, "seo_aeo": 0, "customer_retention": 0 },
+        "retention": { "customer_retention": 10, "performance_marketing": 0, "outbound_sales": 0, "seo_aeo": 0, "social_organic": 0 }
+      }
+    },
+
+    "current_channels": {
+      "label": "Current Acquisition Channels",
+      "type": "multi",
+      "_description": "Spec only gave 4 worked examples and no consistent formula could be reverse-engineered from them (checked algebraically — the three single-channel examples are mutually inconsistent, no clean per-channel weight table reproduces all three exactly). Implemented as an explicit lookup for exactly the documented combinations. Any other combination gets a neutral (all-zero) result until the product owner supplies more worked examples — see engine code comments.",
+      "channelOptions": ["paid_ads", "organic", "referrals"],
+      "explicitCombinations": {
+        "none": { "performance_marketing": 6, "social_organic": 6, "seo_aeo": 6, "outbound_sales": 6, "customer_retention": 0 },
+        "paid_ads": { "seo_aeo": 5, "social_organic": 4, "customer_retention": 4 },
+        "organic": { "performance_marketing": 7, "outbound_sales": 4, "customer_retention": 3 },
+        "referrals": { "outbound_sales": 6, "performance_marketing": 5, "seo_aeo": 4 }
+      }
+    },
+
+    "assets_available": {
+      "label": "Assets Available",
+      "type": "multi",
+      "_description": "Multi-select of assets the business is MISSING. missing_brand_guidelines deliberately does NOT reduce campaign scores per the spec (\"Instead of reducing recommendation confidence, reduce the Readiness Score\") — it is excluded from calculateScores() and only feeds calculateReadiness().",
+      "scorePenalties": {
+        "missing_website": { "performance_marketing": -8, "seo_aeo": -10 },
+        "missing_crm": { "customer_retention": -6, "outbound_sales": -4 },
+        "missing_analytics": { "performance_marketing": -5, "seo_aeo": -5, "customer_retention": -5 }
+      },
+      "readinessOnlyPenalties": {
+        "missing_brand_guidelines": { "all": -2 }
+      }
+    }
+  },
+
+  "readiness": {
+    "maxScore": 100,
+    "components": {
+      "website": 20,
+      "brand_guidelines": 15,
+      "crm": 15,
+      "analytics": 15,
+      "tracking_pixel": 10,
+      "creative_assets": 10,
+      "product_catalogue": 10,
+      "marketing_automation": 5
+    }
+  },
+
+  "roadmap": {
+    "_description": "Spec states the roadmap should follow Acquisition -> Conversion -> Retention rather than pure score order. The worked example in the spec (Performance -> Retention -> SEO -> Social) actually contradicts this stated rule (Performance is a Conversion-stage campaign, not Acquisition). Implemented per the STATED rule (flywheelStage order), not the inconsistent example — flag this to the spec author.",
+    "stageOrder": ["acquisition", "conversion", "retention"]
+  }
+}
