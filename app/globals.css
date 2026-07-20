@@ -1,37 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  /* page chrome — warm brown-black (clarityhq dark sections) */
-  --background: #1c1712;
-  --foreground: #ece7dd;
-  /* dark card surfaces — slightly lifted warm charcoal */
-  --card: #26201a;
-  --card-foreground: #ece7dd;
-  /* borders on dark surfaces — warm brown */
-  --border: #3a3229;
-  --border-strong: #4d4235;
-  /* cream paper — light sections and content cards */
-  --paper: #f4f1e8;
-  --paper-border: #ddd5c4;
-  --paper-foreground: #1c1712;
-  /* dark muted surfaces */
-  --muted: #241e18;
-  --muted-foreground: #a89f8f;
-  --muted-foreground-2: #837a68;
-  /* mustard/gold primary — clarityhq signature accent */
-  --primary: #d1a02e;
-  --primary-hover: #b8871c;
-  --primary-foreground: #1c1712;
-  /* sage-olive green secondary (acquisition/conversion accent) */
-  --secondary: #7a8455;
-  --secondary-foreground: #1c1712;
-  /* rust/brick red destructive (retention accent) */
-  --destructive: #b0553a;
-  --destructive-foreground: #f4f1e8;
-  --ring: #d1a02e;
-  /* input radius stays subtle; cards get their own larger radius */
-  --radius: 0.5rem;
-  --radius-card: 1.25rem;
+  /* palette — mirrors clarityhq-web Brand Book */
+  --cream: #F5F5F0;
+  --cream-2: #EFEDE6;
+  --paper: #FFFFFF;
+  --sand: #B8A68A;
+  --charcoal: #1C1C1C;
+  --steel: #8B9A9C;
+  --sage: #A8B5A0;
+  --sage-d: #5F7A63;
+  --terracotta: #D4A59A;
+  --terracotta-d: #B5746A;
+  --gold: #D4AF37;
+  --gold-d: #B8922B;
+
+  --ink-1: #1C1C1C;
+  --ink-2: #33322E;
+  --ink-3: #5C5A53;
+  --ink-4: #8A8780;
+
+  --line-1: rgba(28, 28, 28, .08);
+  --line-2: rgba(28, 28, 28, .14);
+  --line-3: rgba(28, 28, 28, .22);
+
+  /* mapped onto the token names your Campaigns components already use,
+     so component code doesn't need to change — only these values do */
+  --background: var(--cream);
+  --foreground: var(--ink-2);
+  --card: var(--paper);
+  --card-foreground: var(--ink-1);
+  --border: var(--line-1);
+  --border-strong: var(--line-3);
+  --paper-border: var(--line-1);
+  --muted: var(--cream-2);
+  --muted-foreground: var(--ink-3);
+  --muted-foreground-2: var(--ink-4);
+  --primary: var(--gold);
+  --primary-hover: var(--gold-d);
+  --primary-foreground: var(--charcoal);
+  --secondary: var(--sage);
+  --secondary-foreground: var(--charcoal);
+  /* NOTE: clarityhq-web has no dedicated error/danger color in its token
+     set — terracotta-d is its closest "warm accent," but it's brand accent,
+     not semantic error. Flagging this as an open decision below. */
+  --destructive: var(--terracotta-d);
+  --destructive-foreground: #ffffff;
+  --ring: var(--gold);
+
+  --radius: 6px;
+  --radius-card: 18px;
 }
 
 @theme inline {
@@ -43,7 +61,7 @@
   --color-border-strong: var(--border-strong);
   --color-paper: var(--paper);
   --color-paper-border: var(--paper-border);
-  --color-paper-foreground: var(--paper-foreground);
+  --color-paper-foreground: var(--ink-1);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted-foreground-2: var(--muted-foreground-2);
@@ -57,22 +75,32 @@
   --color-ring: var(--ring);
   --radius-DEFAULT: var(--radius);
   --radius-card: var(--radius-card);
-  --font-heading: var(--font-fraunces);
-  --font-sans: var(--font-plus-jakarta-sans);
-  --font-mono: var(--font-ibm-plex-mono);
+  --font-heading: var(--font-playfair);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-spline-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, sans-serif;
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
 .font-heading {
-  font-family: var(--font-heading), ui-sans-serif, sans-serif;
+  font-family: var(--font-heading), Georgia, serif;
 }
 
 .font-mono-label {
@@ -87,23 +115,37 @@ body {
   font-weight: inherit;
 }
 
-/* ---- Alternating page sections (clarityhq landing rhythm) ---- */
+/* ---- Alternating page sections ----
+   Meaning has flipped from the old dark-first theme:
+   the page default is now cream/light (matches clarityhq-web).
+   .section-dark is now the occasional charcoal accent band
+   (like clarityhq-web's dark CTA sections), not the page default.
+   .section-paper is a subtle cream-2 band for rhythm between
+   full-cream sections. */
 .section-dark {
+  --background: var(--charcoal);
+  --foreground: #F5F5F0;
+  --card: #262626;
+  --card-foreground: #F5F5F0;
+  --muted: #2c2c2c;
+  --muted-foreground: var(--sand);
+  --muted-foreground-2: var(--steel);
+  --border: rgba(255, 255, 255, .1);
+  --border-strong: rgba(255, 255, 255, .18);
   background: var(--background);
   color: var(--foreground);
 }
 
-/* Cream band: remaps base tokens so all children flip to light-on-dark-text automatically */
 .section-paper {
-  --background: var(--paper);
-  --foreground: var(--paper-foreground);
+  --background: var(--cream-2);
+  --foreground: var(--ink-1);
   --card: #ffffff;
-  --card-foreground: var(--paper-foreground);
-  --muted: #ece6d8;
-  --muted-foreground: #6b6353;
-  --muted-foreground-2: #8a8272;
-  --border: var(--paper-border);
-  --border-strong: #cabfa8;
+  --card-foreground: var(--ink-1);
+  --muted: #E4E1D6;
+  --muted-foreground: var(--ink-3);
+  --muted-foreground-2: var(--ink-4);
+  --border: var(--line-1);
+  --border-strong: var(--line-3);
   background: var(--background);
   color: var(--foreground);
 }
