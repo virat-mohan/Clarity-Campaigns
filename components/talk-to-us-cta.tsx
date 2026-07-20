@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-const HUBSPOT_MEETING_LINK = "https://meetings-na2.hubspot.com/virat-mohan";
+export const HUBSPOT_MEETING_LINK = "https://meetings-na2.hubspot.com/virat-mohan";
 
 export function TalkToUsCta({
   variant = "header",

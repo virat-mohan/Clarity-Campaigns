@@ -112,3 +112,8 @@ body {
   background: var(--primary);
   color: var(--primary-foreground);
 }
+
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
