@@ -91,7 +91,7 @@ export default function MarketplacePage() {
           <div className="mt-11 flex flex-wrap justify-center gap-9">
             {HERO_STATS.map((s) => (
               <div key={s.l} className="text-center">
-                <div className="font-heading text-[26px] text-primary">{s.v}</div>
+                <div className="font-heading text-[26px] font-extrabold text-foreground">{s.v}</div>
                 <div className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-muted-foreground-2">{s.l}</div>
               </div>
             ))}
