@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { HUBSPOT_MEETING_LINK } from "@/components/talk-to-us-cta";
@@ -25,11 +26,21 @@ export function SiteHeader() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-[700] px-[clamp(18px,3.2vw,48px)] py-[18px] flex items-center justify-between pointer-events-none [&>*]:pointer-events-auto">
-        <Link 
-          href="/" 
-          className="font-sans font-extrabold text-[clamp(19px,1.9vw,24px)] tracking-[-0.03em] leading-none bg-[#F5F5F0]/70 backdrop-blur-[12px] px-[20px] py-[13px] rounded-full text-[#1C1C1C] no-underline"
+        <Link
+          href="/"
+          className="flex flex-col gap-[2px] bg-[#F5F5F0]/70 backdrop-blur-[12px] px-[20px] py-[11px] rounded-full no-underline"
         >
-          clarity hq<span className="text-[#D4AF37] text-[0.8em]">✦</span>
+          <Image
+            src="/assets/img/new-logo-wordmark.png"
+            alt="Clarity HQ"
+            width={1212}
+            height={216}
+            priority
+            className="h-[26px] w-auto"
+          />
+          <span className="text-[10px] tracking-[0.05em] text-[#9a9a9a] font-normal uppercase leading-none">
+            Human Quotient · AI Era
+          </span>
         </Link>
         
         <div className="flex gap-[10px] items-center">

@@ -26,6 +26,21 @@ export const metadata: Metadata = {
   title: "ClarityHQ Campaign Marketplace",
   description:
     "Internal discussion demo — buy a growth pod, configured and priced end to end.",
+  icons: {
+    icon: [
+      {
+        url: "/assets/img/favicon.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/assets/img/favicon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+    apple: "/assets/img/favicon.svg",
+  },
 };
 
 export default function RootLayout({
